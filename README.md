@@ -175,3 +175,9 @@ Logotip ostidagi oq oval olib taşlandi; logotip kök sarlavha ustida oq rangda 
 ## Oddiy terminal oqimi
 
 Terminalda PDF/sinov yoki printer holati yozuvi yo‘q. Xizmat bosilganda faqat Windows printeriga bosma topşiriği yuboriladi; xizmat kartalari ekranda qoladi. Alohida çipta/PDF oynasi va «Çop etiş» tasdiği yo‘q. Yuborilayotganda tugmalar vaqtinça bloklanadi. Bosma navbatiga qabul qilingaç keyingi talabaga tayyor. Xatoda qisqa xabar va **öşa çiptani** qayta çop etiş tugmasi körinadi; yangi çipta yaratilmaydi. Printer sozlanmagan bölsa çipta çiqarilmaydi, xodimga murojaat xabari körinadi.
+
+## Windows va X96ni avtomatik oçiş
+
+Töliq ketma-ketlik **[KIOSK_VA_TV.md](KIOSK_VA_TV.md)** da. Windows serveri — xizmat; faqat terminalga ruxsat va avtomatik hisob — Windows 10 Pro/Enterprise/Education Assigned Access. Oddiy fullscreen bu çeklovni bermaydi. X96 — mos Android kiosk brauzerda `http://SERVER_IP:8080/tv?autostart=1`, bootda oçiliş, fullscreen va media autoplay. Maxsus APK şart emas.
+
+Yangilangan xizmat örnatgichi loyiha ichidagi eski bazani/loginlarni/ovozlarni yangi örnatişga nusxalaydi; eski server avval töxtatilişi kerak. Eski örnatiş papkasi/xizmati ustidan yozmaydi. Oddiy fullscreen uçun `windows/install-display-autostart.ps1`, nashrni tekşiriş uçun `windows/check-kiosk.ps1`.

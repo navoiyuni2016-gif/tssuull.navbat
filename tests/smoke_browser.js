@@ -4,7 +4,7 @@ const {chromium}=require('playwright');const {spawn}=require('node:child_process
   const server=spawn(process.env.NAVBAT_PYTHON||'python',[path.join(__dirname,'browser_server.py')]);let browser;
   try{
     const port=await new Promise((resolve,reject)=>{let output='';const timer=setTimeout(()=>reject(Error('Server startup timeout')),15000);server.stdout.on('data',data=>{output+=data;const match=output.match(/READY (\d+)/);if(match){clearTimeout(timer);resolve(match[1])}});server.on('exit',code=>{clearTimeout(timer);reject(Error('Server exit '+code))});server.stderr.on('data',data=>process.stderr.write(data));});
-    browser=await chromium.launch({executablePath:process.env.NAVBAT_CHROME||'/usr/bin/chromium',headless:true,args:['--no-sandbox']});
+    browser=await chromium.launch({executablePath:process.env.NAVBAT_CHROME||'/usr/bin/chromium',headless:true,args:['--no-sandbox','--autoplay-policy=no-user-gesture-required']});
     const context=await browser.newContext();const errors=[];context.on('page',page=>page.on('pageerror',e=>errors.push(e.message)));
     const base='http://127.0.0.1:'+port;const page=await context.newPage();
     await page.goto(base+'/admin');await page.getByLabel('Login',{exact:true}).fill('admin');await page.getByLabel('Parol',{exact:true}).fill('browser-test-password-123');
@@ -25,6 +25,7 @@ const {chromium}=require('playwright');const {spawn}=require('node:child_process
     // Printer completion is simulated here; real Windows paper output requires device testing.
     await context.route('**/api/print/status',route=>route.fulfill({json:{job:{status:'sent'}}}));
     await context.addInitScript(()=>{window.__printCalls=0;window.print=()=>window.__printCalls++;});
+    const autoTV=await context.newPage();await autoTV.goto(base+'/tv?autostart=1');await autoTV.waitForFunction(()=>recorded.enabled);await autoTV.close();
     const english=await context.newPage();await english.goto(base+'/');
     await english.getByRole('button',{name:'English',exact:true}).click();
     await english.getByRole('button',{name:'Research and Innovation Services Sector',exact:true}).waitFor();await english.getByRole('heading',{name:'Choose a service',exact:true}).waitFor();assert(await english.getByText('Collect your ticket',{exact:false}).count()>0);

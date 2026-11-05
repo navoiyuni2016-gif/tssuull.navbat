@@ -263,7 +263,7 @@ class Handler(BaseHTTPRequestHandler):
                 tickets=[dict(r) for r in rows]
                 busy=[dict(r) for r in c.execute("SELECT id,label,service,window,status FROM tickets WHERE status IN ('called','serving') AND user<>? ORDER BY window",(u['name'],))]
                 return self.send(200,{'tickets':tickets,'active_windows':busy,'role':u['role'],'window':u['window']})
-        path = {'/':'index.html','/staff':'index.html','/tv':'index.html','/tv-audio':'index.html','/admin':'index.html','/style.css':'style.css','/reference-theme.css':'reference-theme.css','/sample-match.css':'sample-match.css','/app.js':'app.js','/announcer.js':'announcer.js','/recordings.js':'recordings.js','/tv-flasher.js':'tv-flasher.js','/alphabet.js':'alphabet.js'}.get(self.path)
+        path = {'/':'index.html','/staff':'index.html','/tv':'index.html','/tv-audio':'index.html','/admin':'index.html','/style.css':'style.css','/reference-theme.css':'reference-theme.css','/sample-match.css':'sample-match.css','/app.js':'app.js','/announcer.js':'announcer.js','/recordings.js':'recordings.js','/tv-flasher.js':'tv-flasher.js','/alphabet.js':'alphabet.js'}.get(parsed.path)
         if not path:
             return self.send(404,{'error':'Not found'})
         data = (ROOT/'web'/path).read_bytes()

@@ -255,6 +255,12 @@ async function adminSection(key,data,panel){
 
 }
 let soundStatus='Ovoz o‘chirilgan',callCursor=null,pollingCalls=false,audioFiles={},audioMode='recorded',voiceURI='';
+let autoAudioAttempted=false;
+async function autoStartTVAudio(){
+  if(location.pathname!=='/tv'||new URLSearchParams(location.search).get('autostart')!=='1'||autoAudioAttempted||recorded.missing().length)return;
+  autoAudioAttempted=true;
+  try{await recorded.enable()}catch(error){soundStatusUpdate('Avtomatik ovoz bloklandi. Kiosk brauzerida media autoplay ruxsatini yoqing. '+error.message)}
+}
 function soundStatusUpdate(text){soundStatus=text;const e=document.querySelector('#sound-status');if(e)e.textContent=text}
 const recorded=new RecordedAnnouncer(window.Audio,soundStatusUpdate);
 const announcer=new QueueAnnouncer(window.speechSynthesis,window.SpeechSynthesisUtterance,soundStatusUpdate);
@@ -308,7 +314,7 @@ async function pollCalls(){
 async function route(){if(isTV())tv();else if(location.pathname==='/admin')await admin();else if(location.pathname==='/staff')await staff();else terminal()}
 async function refresh(){
   try{state=await api('state');updateBrand();document.body.dataset.connection='online';document.querySelector('#connection').textContent='● Ulangan';
-    if(isTV()){audioFiles=(await api('audio')).files;recorded.configure(audioFiles,state.settings.prefix);const newest=Math.max(0,...state.calls.map(c=>c.id));if(callCursor!==null&&newest<callCursor){callCursor=newest;recorded.lastId=newest;announcer.seen.clear();tvFlasher.lastId=newest;tvFlasher.pending=[];}await pollCalls();tv()}
+    if(isTV()){audioFiles=(await api('audio')).files;recorded.configure(audioFiles,state.settings.prefix);const newest=Math.max(0,...state.calls.map(c=>c.id));if(callCursor!==null&&newest<callCursor){callCursor=newest;recorded.lastId=newest;announcer.seen.clear();tvFlasher.lastId=newest;tvFlasher.pending=[];}await pollCalls();tv();await autoStartTVAudio()}
     if(!started){started=true;await route()}
     if(location.pathname==='/staff'&&document.querySelector('#staff-data')&&!document.activeElement?.matches('select,button'))try{await staffData(await api('work'))}catch{login()}
     return true;

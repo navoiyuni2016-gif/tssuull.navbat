@@ -25,3 +25,9 @@ Yakuniy 26 Python testi ötdi. Chromium’da shaffof/square logo joyi, 1366×768
 ## Xizmat → avtomatik çek
 
 Chromium’da terminal xizmatlar oynasida qolişi, PDF/printer holati yozuvi va çipta oynasi yo‘qligi tekşirildi. Bosma jarayonida beshta xizmat tugmasi bloklanadi; ikki marta bosish bitta çipta yaratadi. Simulyatsiya qilingan printer xatosidan keyingi qayta bosma ösha request bilan bajariladi va yangi çipta yaratilmaydi. Bu sinov Windows bosma yakunini taqlid qiladi; haqiqiy qoğoz natijasi qurilmada sinaladi. Yangilangan terminal va TV 1366×768 ekran tekşiruvi ham ötdi.
+
+## Windows 10 / X96 avtomatik oçiliş
+
+27 Python testi ötdi. Yangi örnatişga köçiriş sinovi baza/loginlar/çiptalar va audio nusxasini, mavjud manzilga yozmaslikni va işlayotgan server bazasini köçirmaslikni tekşirdi. Chromiumda `/tv?autostart=1` sahifasi va autoplay ruxsati bilan yozuvli ovozning avtomatik yoqilişi ötdi; umumiy terminal→operator→TV oqimi ham ötdi. Xizmat örnatgichidagi service executable yöli tuzatildi.
+
+Windows PowerShell parseri va Windows SCM/Task Scheduler/Assigned Access bu Linux muhitida mavjud emas. Shu sabab Windows skriptlari qurilmada bajarilmadi. X96 proşivkasi, Android boot/launcher ruxsatlari, HDMI-CEC va haqiqiy ovoz avtomatik oçilişi tekşirilmagan. Oddiy fullscreen tizimni qulflamaydi; cheklangan kiosk Windows nashriga qarab Assigned Access orqali bir marta sozlanadi. Töliq yöriq KIOSK_VA_TV.md ichida.
