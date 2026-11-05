@@ -71,7 +71,11 @@ Faqat displey uchun Windows kompyuter ishlatilsa:
 
 `192.168.1.10` — misol; haqiqiy server IP bilan almashtiring. Skript joylashgan loyiha papkasini kochirmang. Bu Android X96 uchun skript emas.
 
-## 4. X96: alohida yangi APK kerak emas
+## 4. X96 uchun tayyor Android APK
+
+Tayyor **TOŞDÖTAU TV** ilovasini [APK](https://github.com/navoiyuni2016-gif/tssuull.navbat/raw/refs/heads/main/downloads/TOShDOTAU-TV.apk) orqali örnating. Lokal IP, PIN, avtostart va Home tanlovi [TV_ANDROID.md](TV_ANDROID.md) ichida. Uchinci tomon kiosk brauzeri shart emas.
+
+Quyidagi eski yol faqat APK ishlatilmasa muqobil variant:
 
 X96 oilasida turli Android versiyalari bor. Mos **kiosk brauzer** (masalan, Fully Kiosk Browser & App Lock) orqali mavjud TV sahifasi ochiladi. Ilovani rasmiy manbadan oling; ayrim kiosk/avtostart funksiyalari litsenziya talab qilishi mumkin. Model nomining ozi funksiyalarning proshivkada mavjudligini kafolatlamaydi.
 

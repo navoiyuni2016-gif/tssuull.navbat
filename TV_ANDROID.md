@@ -4,8 +4,8 @@ Ilova Windows’dagi mavjud navbat serveriga lokal tarmoq orqali ulanadi. Alohid
 
 ## Örnatiş
 
-1. `TOShDOTAU-TV.apk`ni GitHub’dagi yuklab oliş havolasidan oling. USB fleshka orqali X96ga köçiriş ham mumkin.
-2. X96 File Manager’da APKni oçing. Söralsa şu fayl menejeriga **Install unknown apps / Nomaʼlum manbadan örnatiş** ruxsatini bering, söng **Install**. Örnatişdan keyin bu ruxsatni öçirib qöyiş mumkin.
+1. [TOShDOTAU-TV.apk](https://github.com/navoiyuni2016-gif/tssuull.navbat/raw/refs/heads/main/downloads/TOShDOTAU-TV.apk)ni yuklab oling. USB fleshka orqali X96ga köçiriş ham mumkin.
+2. X96 File Manager’da APKni oçing. Söralsa şu fayl menejeriga **Install unknown apps / Nomaʼlum manbadan örnatiş** ruxsatini bering, söng **Install**. Eski Android’da bu **Settings → Security → Unknown sources** bölişi mumkin. Örnatişdan keyin bu ruxsatni öçirib qöyiş mumkin.
 3. **TOŞDÖTAU TV** ilovasini oçing.
 4. **Server IP**: Windows kompyuterining lokal IPv4 manzilini yozing. Masalan, `192.168.1.10:8080`. Bu faqat misol: öz kompyuteringiz IP manzilini kiriting. `127.0.0.1`ni yozmang — u TV boxning özi.
 5. Sozlamalar uçun **4–8 raqamli PIN** yarating va takrorlang. Bu TV box sozlamalari PINi, serverdagi admin paroli emas.
@@ -18,6 +18,8 @@ Windows serverini ishga tuşiring. Windows va X96 bir routerga ulangan bölsin; 
 Ilovada **Box yoqilganda avtomatik oçiş**ni belgilang. Android 10 va yangiroğida bootdan ilova oçiş çeklangan: **TOŞDÖTAU TV’ni standart Home / Launcher** qilib tanlang. Sozlamalar dialogidagi **Android / Home sozlamalari** yordam beradi. X96ga qarab **Settings → Apps → Default apps → Home app**, yoki pultda Home bosib ilovani tanlaş va **Always** ishlatiladi.
 
 Ilovani örnatgandan keyin kamida bir marta oçib sozlang. Avtostartga proşivka ruxsati kerak bölsa **Autostart**ni yoqing. Home sifatida tanlangan ilovani avtomatik oçirişni töxtatiş uçun Android sozlamalarida boşqa Home/Launcher tanlang; faqat checkboxni öçiriş Android Home tanlovini almaştirmaydi.
+
+Eski Baraka ilovasi ham avtostart qilsa, yangi ilovani sinab körgaç eski avtostartni öçiring yoki Home tanlovini almaştiring. Eskisini sinov tugamagunça öçiriş şart emas.
 
 Tokdan uzib qayta yoqib sinang. Ayrim X96 proşivkalari bootdagi ilova oçilişini çeklaydi; real qurilmada tasdiqlanişi kerak. TV yoqilişi X96ni har doim qayta yoqmaydi: doimiy quvvatdagi boxda ilova avvaldan oçiq qoladi. HDMI-CEC va uyqu sozlamalarini tekşiring.
 

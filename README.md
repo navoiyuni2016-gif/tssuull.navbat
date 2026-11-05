@@ -1,5 +1,7 @@
 # Universitet elektron navbat tizimi
 
+**X96 Android TV ilovasi:** [TOShDOTAU-TV.apk](https://github.com/navoiyuni2016-gif/tssuull.navbat/raw/refs/heads/main/downloads/TOShDOTAU-TV.apk) · [Örnatiş va avtostart](TV_ANDROID.md). Windows bilan bir lokal tarmoqda işlaydi.
+
 **Windows uçun tayyor ilova:** [TOShDOTAU-Setup.exe](https://github.com/navoiyuni2016-gif/tssuull.navbat/releases/latest/download/TOShDOTAU-Setup.exe). Python alohida kerak emas. [EXE yöriqnomasi](EXE_BOSHLASH.md). Quyidagi Python buyruqlari manba nusxasi uçun.
 
 Terminal → çipta → xodim çaqiruvi → TV → xizmatni yakunlaş. Server va SQLite bazasi terminalning özida işlaydi; işlaş vaqtida internet, Docker, taşqi server va eski DLL talab qilinmaydi. Python 3.12+ kerak. Frontend resurslari lokal.

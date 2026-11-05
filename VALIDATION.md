@@ -44,3 +44,15 @@ Windows runnerida muvaffaqiyatli yig‘ilgan va tarqatilgan release: **windows-4
 - Tuzatişdan keyin Linuxda 32 test (31 ötdi, Windows frozen testi ötkazib yuborildi), Chromiumdagi terminal→operator→TV jarayoni ham ötdi.
 
 Jismoniy printer, foydalanuvçi qurilmasidagi installer oynalarini bosib örnatiş, Windows boot/Assigned Access va X96 hali shu qurilmalarda sinov talab qiladi. Raqamli kod imzosi yo‘q. Windows testlari manba yoki soxta EXEni emas, haqiqiy PyInstaller paketini işga tuşirdi.
+
+## X96 Android TV APK
+
+Tekşirilgan manba commit `5691eb5`; Android workflow: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42090037233 . Android release tag `android-build-6` aynan shu commitga mosligi Git orqali tekşirildi. APK 1.0.6, Android 5.0+ uçun, CPUga boğliq native kutubxonasiz.
+
+- Java/JUnit manzil normalizatsiyasi, public/loopback/notoğri manzillarni rad etiş va bir origin/TV navigatsiyasini tekşiruvçi 3 test CI’da ötdi.
+- Android 11 (API 30) emulatorda haqiqiy Activity/WebView sinovi ötdi: fullscreen sozlamasi va ekran uyqudan saqlanişi, JavaScript/DOM storage, gesturesiz media, fayl/content access çeklovi, IP/PIN saqlanişi va PINni tekşiriş.
+- Dastlab ulanmaydigan private LAN manzilida native qayta ulaniş xabari tasdiqlandi; server qaytganda avtomatik retry bilan sahifa oçilib, strict Content-Security-Policy ostida WAV ovozi bosişsiz ijro etildi.
+- Haqiqiy universitet serveri va beshta faol oyna bilan Chromium’da 640×360, 853×480, 960×540, 1280×720 va 1366×768 CSS ekranlari tekşirildi. Barcha oynalar/kutayotganlar siğdi; beşinçi oyna pastki ro‘yxat bilan ustma-ust tuşmadi. Server CSPsi yumşatilmadi: Android uslubi faqat bir originli virtual CSS javobi orqali beriladi.
+- Imzolangan APK ichidagi uslub sinovdan ötgan manba bilan mos. APK v1, v2 va v3 imzolari Android API 21 minimumi bilan apksigner’da tasdiqlandi. Public GitHub APK qayta yuklab olinib mahalliy imzolangan fayl bilan SHA256 mosligi tekşirildi. Maxfiy signing key Git’dan taşqarida saqlanadi.
+
+Haqiqiy X96 proşivkasi, HDMI ekran, karnay va tokdan keyingi Home/boot davranishi hali qurilmada sinalmagan. Android 10+ avtostart uçun Home/Launcher tanlovi kerak. APK universal klient, Windows’dagi mavjud lokal serverga ulanadi; bazani köçirmaydi.
