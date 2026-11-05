@@ -42,7 +42,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: set -o pipefail; gradle -p android connectedDebugAndroidTest --stacktrace 2>&1 | tee android/emulator.log
+          script: bash -o pipefail -c 'gradle -p android connectedDebugAndroidTest --stacktrace 2>&1 | tee android/emulator.log'
       - name: Failure diagnostics
         if: failure()
         run: python android/ci_diagnostics.py
