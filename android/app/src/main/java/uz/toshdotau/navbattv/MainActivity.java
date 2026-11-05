@@ -41,6 +41,7 @@ public class MainActivity extends Activity {
     TextView connection;
     SharedPreferences prefs;
     String server="";
+    private String compactCss="";
     boolean disconnected=false,mainError=false,active=false;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final Runnable retry=()->loadTV();
@@ -53,6 +54,11 @@ public class MainActivity extends Activity {
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        try(java.io.InputStream input=getAssets().open("tv-compact.css")){
+            java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[4096];int length;
+            while((length=input.read(buffer))!=-1)out.write(buffer,0,length);
+            compactCss=new String(out.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
+        }catch(java.io.IOException ignored){}
         prefs=getSharedPreferences("tv",MODE_PRIVATE);server=prefs.getString("server","");
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(16,45,84));
         web=new WebView(this);root.addView(web,new FrameLayout.LayoutParams(-1,-1));
@@ -74,6 +80,7 @@ public class MainActivity extends Activity {
             @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap icon){mainError=false;}
             @Override public void onPageFinished(WebView view,String url) {
                 if(!mainError&&UrlPolicy.navigationAllowed(server,url)) {
+                    view.evaluateJavascript("(function(){var s=document.getElementById('android-tv-layout');if(!s){s=document.createElement('style');s.id='android-tv-layout';document.head.appendChild(s)}s.textContent="+org.json.JSONObject.quote(compactCss)+"})()",null);
                     disconnected=false;connection.setVisibility(View.GONE);handler.removeCallbacks(retry);
                     view.evaluateJavascript("(function(){try{new Function('return ({x:1})?.x');return true}catch(e){return false}})()",value->{
                         if("false".equals(value)){connection.setText("Android System WebView eskirgan. Uni yangilang.");connection.setVisibility(View.VISIBLE);}
