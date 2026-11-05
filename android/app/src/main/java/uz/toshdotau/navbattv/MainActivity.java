@@ -74,17 +74,18 @@ public class MainActivity extends Activity {
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request){return !UrlPolicy.navigationAllowed(server,request.getUrl().toString());}
             @Override public boolean shouldOverrideUrlLoading(WebView view,String url){return !UrlPolicy.navigationAllowed(server,url);}
             @Override public WebResourceResponse shouldInterceptRequest(WebView view,WebResourceRequest request) {
-                if(UrlPolicy.sameOrigin(server,request.getUrl().toString()))return null;
+                if(UrlPolicy.sameOrigin(server,request.getUrl().toString())){
+                    if("/__android_tv.css".equals(request.getUrl().getPath()))return new WebResourceResponse("text/css","UTF-8",new ByteArrayInputStream(compactCss.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+                    return null;
+                }
                 return new WebResourceResponse("text/plain","UTF-8",new ByteArrayInputStream(new byte[0]));
             }
             @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap icon){mainError=false;}
             @Override public void onPageFinished(WebView view,String url) {
                 if(!mainError&&UrlPolicy.navigationAllowed(server,url)) {
-                    view.evaluateJavascript("(function(){var s=document.getElementById('android-tv-layout');if(!s){s=document.createElement('style');s.id='android-tv-layout';document.head.appendChild(s)}s.textContent="+org.json.JSONObject.quote(compactCss)+"})()",null);
+                    view.evaluateJavascript("(function(){if(!document.getElementById('android-tv-layout')){var s=document.createElement('link');s.rel='stylesheet';s.id='android-tv-layout';s.href="+org.json.JSONObject.quote(server+"/__android_tv.css")+";document.head.appendChild(s)}})()",null);
                     disconnected=false;connection.setVisibility(View.GONE);handler.removeCallbacks(retry);
-                    view.evaluateJavascript("(function(){try{new Function('return ({x:1})?.x');return true}catch(e){return false}})()",value->{
-                        if("false".equals(value)){connection.setText("Android System WebView eskirgan. Uni yangilang.");connection.setVisibility(View.VISIBLE);}
-                    });
+
                 }
             }
             @Override public void onReceivedError(WebView view,WebResourceRequest request,WebResourceError error){if(request.isForMainFrame())showDisconnected();}
