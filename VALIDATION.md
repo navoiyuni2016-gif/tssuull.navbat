@@ -15,3 +15,9 @@ Mustaqil Python/SQLite tizimi; eski dastur, DLL, litsenziya serveri yoki fronten
 Windows xizmatini örnatiş/qayta yoqiş, Edge kioski, LocalService printer ruxsatlari, printer drayveri va 80 mm jismoniy çop etiş bu Linux muhitida sinalmagan. Haqiqiy TV brauzeri, karnay, yuklanadigan ovozlar, LAN va internet uzilgan holatni öz qurilmangizda sinang. sounds.rar hajmi yuklaş çegarasidan katta edi; uning yozuvlari paketga kiritilmagan, keyin Administrator → Ovozlar orqali yuklanadi.
 
 ZIP manba va ishga tuşiriş skriptlarini öz içiga oladi; Python 3.12+ alohida örnatiladi. Mustaqil EXE yoki Python örnatuvçisi kiritilmagan. Test parollari faqat vaqtinçalik sinov bazalari uçun; tayyor administrator paroli yoki real baza tarqatilmaydi.
+
+## Kiosk printeri va logotip tuzatişi
+
+KPOS drayveri aniqlansa faqat yangi çiptalar avtomatik bosmaga ötadi. Uch yangi test drayver mavjudligi, topilmaganda sozlamani saqlash, boshqa printerga tegmaslik va eski preview çiptani qayta çop etmaslikni tekşiradi. Windows drayveri/haqiqiy çek bu Linux muhitida sinalmagan.
+
+Yakuniy 26 Python testi ötdi. Chromium’da shaffof/square logo joyi, 1366×768 terminal/TV siğişi va Windows printer rejimida sektor bosilganda brauzer print oynasi çaqirilmasligi hamda bosma navbatiga yozilişi tasdiqlandi.

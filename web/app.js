@@ -289,7 +289,7 @@ function tv(){
   for(const call of state.window_calls.slice(0,5)){
     const row=el('tr',undefined,body);if(call.id===latest?.id)row.className='latest-window';el('td',call.window+'-oyna',row);el('td',call.label,row).className='technical';
   }
-  if(!state.window_calls.length){const cell=el('td','Chaqiruvlar kutilmoqda…',el('tr',undefined,body));cell.colSpan=2;}
+  if(!state.window_calls.length){const cell=el('td','Chaqiruvlar kutilmoqda…',el('tr',undefined,body));cell.colSpan=2;cell.className='tv-empty-call';}
   const queue=document.querySelector('#tv-waiting-list');queue.replaceChildren();
   for(const ticket of state.queue)el('span',ticket.label,queue).className='waiting-ticket technical';
   if(!state.queue.length)el('span','Kutayotgan chiptalar yo‘q',queue).className='empty-queue';

@@ -9,7 +9,7 @@ $python=(& py -3 -c 'import sys; print(sys.executable)')
 if ($LASTEXITCODE -ne 0) {throw 'Python 3.12 yoki yangiroğini barça foydalanuvçilar uçun örnating'}
 if (Test-Path $InstallPath) {throw 'Örnatiş papkasi mavjud. Maʼlumotlarni saqlab, boşqa InstallPath tanlang.'}
 New-Item -ItemType Directory -Path $InstallPath | Out-Null
-foreach($item in @('app.py','management.py','audio_store.py','runtime.py','printer_adapter.py','windows_service.py','report_exports.py','report_pdf.py','fonts','alphabet.py','web','windows','tools','README.md','BOSHLASH.cmd','YO_RIQNOMA.html')) {
+foreach($item in @('app.py','management.py','audio_store.py','runtime.py','printer_adapter.py','windows_service.py','report_exports.py','report_pdf.py','fonts','alphabet.py','web','windows','tools','README.md','BOSHLASH.cmd','PRINTERNI_SOZLASH.cmd','YO_RIQNOMA.html')) {
   Copy-Item -LiteralPath (Join-Path $source $item) -Destination $InstallPath -Recurse
 }
 $config=@{host=$BindAddress;port=$Port}|ConvertTo-Json

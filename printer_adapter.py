@@ -63,3 +63,34 @@ class Worker:
             result='uncertain';error='Bosma vaqti tugadi. Qog‘oz chiqqanini tekshiring; keyin shu chiptani qayta chop eting.'
         except (ValueError,OSError) as exc:result='failed';error=str(exc)
         with self.connect() as c:c.execute('UPDATE print_jobs SET status=?,error=? WHERE id=?',(result,error,row['job']))
+
+
+KIOSK_PRINTER = 'KPOS_80 Printer(1)'
+
+
+def installed_printers():
+    """Read driver names from the same Windows account that will print."""
+    if os.name != 'nt':
+        return []
+    command = "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; Add-Type -AssemblyName System.Drawing; @([System.Drawing.Printing.PrinterSettings]::InstalledPrinters) | ConvertTo-Json -Compress"
+    result = subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command',command],capture_output=True,timeout=15,check=True)
+    value = json.loads(result.stdout.decode('utf-8-sig').strip() or '[]')
+    return [value] if isinstance(value,str) else value or []
+
+
+def configure_printer(connect, name=KIOSK_PRINTER, *, automatic=False):
+    """Select only an installed driver; never send a test or replay old jobs."""
+    if automatic:
+        with connect() as c:
+            if management.settings(c)['printer_mode'] != 'html':
+                return False
+    if name not in installed_printers():
+        if automatic:
+            return False
+        raise ValueError('Printer topilmadi: '+name+'. Windows drayverini va printer nomini tekshiring.')
+    with connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        if automatic and management.settings(c)['printer_mode'] != 'html':
+            return False
+        management.save_settings(c,dict(printer_mode='windows',printer_name=name,paper_width_mm=80))
+    return True

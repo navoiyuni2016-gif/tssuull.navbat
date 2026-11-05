@@ -1,5 +1,6 @@
 """Independent, offline university queue server. Python 3.12+, standard library."""
 import argparse
+import subprocess
 import datetime as dt
 import hashlib
 import hmac
@@ -408,6 +409,7 @@ def main():
     parser.add_argument('--host',default='127.0.0.1')
     parser.add_argument('--port',type=int,default=8080)
     parser.add_argument('--backup',action='store_true')
+    parser.add_argument('--configure-printer',metavar='WINDOWS_NAME')
     parser.add_argument('--reset-admin',action='store_true')
     args = parser.parse_args()
     if args.reset_admin:
@@ -425,6 +427,10 @@ def main():
         initialize(getpass.getpass('Administrator uchun yangi parol (kamida 12 belgi): '))
         return
     initialize()
+    if args.configure_printer:
+        printer_adapter.configure_printer(connect,args.configure_printer)
+        print('Dialogsiz chop etish sozlandi: '+args.configure_printer)
+        return
     if args.backup:
         destination = DATA/'backups'
         destination.mkdir(exist_ok=True)
@@ -437,6 +443,12 @@ def main():
 def run_server(host,port,stop=None):
     import runtime
     with runtime.InstanceLock(DATA):
+        if os.name=='nt':
+            try:
+                if printer_adapter.configure_printer(connect,automatic=True):
+                    print('Dialogsiz printer: '+printer_adapter.KIOSK_PRINTER,flush=True)
+            except (OSError,ValueError,subprocess.SubprocessError) as exc:
+                logging.getLogger('navbat').warning('Printer avtomatik sozlanmadi: %s',exc)
         server=ThreadingHTTPServer((host,port),Handler)
         server.timeout=0.5
         log=RotatingFileHandler(DATA/'server.log',maxBytes=1024*1024,backupCount=3,encoding='utf-8')

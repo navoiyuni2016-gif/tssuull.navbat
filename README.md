@@ -161,3 +161,13 @@ Administrator → **Hisobotlar** → sana oraliğini tanlang → **Körsatiş** 
 Bir xil universitet şabloni: rasmiy logo, tizim nomi, davr va tayyorlangan vaqt (UTC+5), oltita umumiy körsatkiç, bölimlar va operatorlar kesimi, hisoblaş izohi. Excelda uç varaq: Umumiy, Bölimlar, Operatorlar; raqamlar hisoblaş uçun son sifatida saqlanadi. Word tahrirlanadi, PDF çop etiş uçun A4 albom shaklida. PDF şrifti va uning litsenziyasi `fonts/` içida.
 
 Namuna fayllar faqat sinov maʼlumotlaridan iborat; haqiqiy hisobotda bazadagi tanlangan davr maʼlumotlari olinadi. Windows, termoprinter, TV karnayi va tarmoq ruxsatlari öz qurilmangizda sinaladi.
+
+## KPOS_80 Printer(1): tugmani bosib avtomatik çek oliş
+
+Windows’da aynan `KPOS_80 Printer(1)` drayveri mavjud bölsa, server ishga tushganda brauzer/PDF rejimidan Windows dialogsiz rejimiga avtomatik ötadi (80 mm). Avvaldan boshqa Windows printer tanlangan bölsa u özgarmaydi. Sektor bosilganda server çekni printer navbatiga yuboradi; brauzer çop etiş/PDF oynasi oçilmaydi.
+
+Mavjud serverni qayta oçmasdan sozlash uçun `PRINTERNI_SOZLASH.cmd` faylini server kompyuterida ishga tushiring, terminal sahifasini **Ctrl+F5** bilan yangilang. Yoki Administrator → Sozlamalar: printer nomi `KPOS_80 Printer(1)`, rejim **Windows drayveri orqali dialogsiz**, qoğoz **80 mm**, Saqlash. Yangi sozlama avvalgi sinov çiptalarini qayta çop etmaydi.
+
+Yangilash: serverni töxtating, eski `data` papkasining zaxirasini oling, yangi loyiha fayllarini ösha loyiha papkasiga köçiring; **data papkasini saqlang**. Söng `BOSHLASH.cmd`, kerak bölsa `PRINTERNI_SOZLASH.cmd`. Windows xizmatida esa örnatilgan papkadagi fayllarni yangilab xizmatni qayta yoqing. Printer shu xizmatning LocalService hisobiga ham körinişi kerak.
+
+Logotip ostidagi oq oval olib taşlandi; logotip kök sarlavha ustida oq rangda körsatiladi; hisobotlardagi asl kök logo özgarmaydi. TV kutiş matni kichik ekranda ham qatorga bölinadi. Kiosk uçun `BOSHLASH.cmd` bilan oçing yoki brauzerda **F11** bosing. Haqiqiy TV natijasi uning ekran ölçami va brauzerida sinab köriladi.
