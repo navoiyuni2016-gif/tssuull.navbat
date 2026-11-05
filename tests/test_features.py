@@ -1,3 +1,4 @@
+import database
 import base64
 import io
 import json
@@ -70,7 +71,7 @@ class Features(unittest.TestCase):
             self.assertEqual(c.execute('SELECT count(*) FROM tickets').fetchone()[0],1)
             self.assertIn(c.execute('SELECT status FROM print_jobs').fetchone()[0],('failed','uncertain'))
         path=runtime.backup(app.connect,app.DATA)
-        with sqlite3.connect(path) as c:self.assertEqual(c.execute('SELECT count(*) FROM tickets').fetchone()[0],1)
+        with database.connect(path) as c:self.assertEqual(c.execute('SELECT count(*) FROM tickets').fetchone()[0],1)
     def test_work_hours_and_number_rule(self):
         with app.connect() as c:management.save_settings(c,{'weekdays':[(app.dt.datetime.now(app.TZ).weekday()+1)%7]})
         with self.assertRaises(ValueError):app.issue(1,'request-closed-123456')

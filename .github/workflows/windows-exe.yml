@@ -10,6 +10,8 @@ on:
       - 'desktop_runtime.py'
 permissions:
   contents: write
+env:
+  PYTHONUTF8: '1'
 jobs:
   build:
     runs-on: windows-2022

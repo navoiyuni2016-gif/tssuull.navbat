@@ -1,3 +1,4 @@
+import database
 """Independent, offline university queue server. Python 3.12+, standard library."""
 import argparse
 import subprocess
@@ -29,7 +30,7 @@ NAMES = ['Talabalarga xizmat ko‘rsatish sektori', 'Ilmiy va innovatsion faoliy
 UNIVERSITY = 'Alisher Navoiy nomidagi Toshkent davlat o‘zbek tili va adabiyoti universiteti'
 
 def connect():
-    c = sqlite3.connect(DATA / 'queue.db', timeout=30)
+    c = database.connect(DATA / 'queue.db', timeout=30)
     c.row_factory = sqlite3.Row
     c.execute('PRAGMA foreign_keys=ON')
     return c
@@ -437,7 +438,7 @@ def main():
     if args.backup:
         destination = DATA/'backups'
         destination.mkdir(exist_ok=True)
-        with connect() as source, sqlite3.connect(destination/(dt.datetime.now().strftime('%Y%m%d-%H%M%S')+'.db')) as target:
+        with connect() as source, database.connect(destination/(dt.datetime.now().strftime('%Y%m%d-%H%M%S')+'.db')) as target:
             source.backup(target)
         return
     run_server(args.host,args.port)

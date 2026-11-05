@@ -1,3 +1,4 @@
+import database
 """Automatic consistent backups; keep the newest fourteen daily snapshots."""
 import datetime as dt
 import logging
@@ -8,7 +9,7 @@ import threading
 def backup(connect,data):
     destination=data/'backups';destination.mkdir(exist_ok=True)
     path=destination/(dt.datetime.now(dt.timezone(dt.timedelta(hours=5))).strftime('%Y%m%d-%H%M%S-%f')+'.db')
-    with connect() as source,sqlite3.connect(path) as target:source.backup(target)
+    with connect() as source,database.connect(path) as target:source.backup(target)
     return path
 
 

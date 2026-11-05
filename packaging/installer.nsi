@@ -1,4 +1,4 @@
-Unicode true
+﻿Unicode true
 !include "MUI2.nsh"
 Name "TOŞDÖTAU — elektron navbat"
 OutFile "..\dist\TOShDOTAU-Setup.exe"

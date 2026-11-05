@@ -1,3 +1,4 @@
+import database
 """Shared paths and instance identity for the Windows desktop distribution."""
 import hashlib
 import os
@@ -20,7 +21,7 @@ def has_admin(directory):
     path=Path(directory)/'queue.db'
     if not path.is_file():return False
     try:
-        with sqlite3.connect(path.resolve().as_uri()+'?mode=ro',uri=True) as c:
+        with database.connect(path.resolve().as_uri()+'?mode=ro',uri=True) as c:
             return bool(c.execute('SELECT 1 FROM users LIMIT 1').fetchone())
     except sqlite3.OperationalError:return False
 
