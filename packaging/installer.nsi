@@ -41,6 +41,7 @@ Section "Uninstall"
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\TOShDOTAU"
   Delete "$INSTDIR\TOShDOTAU.exe"
   RMDir /r "$INSTDIR\_internal"
+  RMDir /r "$INSTDIR\licenses"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
 SectionEnd

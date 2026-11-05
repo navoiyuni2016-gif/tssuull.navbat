@@ -6,8 +6,8 @@ import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
 FILES=['database.py','desktop_launcher.py','desktop_runtime.py','EXE_BOSHLASH.md','app.py','alphabet.py','audio_store.py','management.py','printer_adapter.py','runtime.py','windows_service.py','report_exports.py','report_pdf.py','BOSHLASH.cmd','PRINTERNI_SOZLASH.cmd','README.md','KIOSK_VA_TV.md','VALIDATION.md','YO_RIQNOMA.html']
-DIRECTORIES=['web','windows','tests','tools','fonts']
-SUFFIXES={'.py','.js','.css','.html','.ps1','.md','.cmd','.svg','.png','.jpg','.jpeg','.ttf','.txt'}
+DIRECTORIES=['packaging','.github','web','windows','tests','tools','fonts']
+SUFFIXES={'.nsi','.yml','.py','.js','.css','.html','.ps1','.md','.cmd','.svg','.png','.jpg','.jpeg','.ttf','.txt'}
 
 def build(destination):
     destination.parent.mkdir(parents=True,exist_ok=True)
