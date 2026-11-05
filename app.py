@@ -163,6 +163,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == '/api/health':
+            from desktop_runtime import instance_id
+            return self.send(200,{'app':'toshdotau-navbat','instance':instance_id(DATA)})
         if parsed.path == '/api/reports/export':
             u=self.user()
             if not u or u['role']!='admin':return self.send(403,{'error':'Administrator sifatida kiring'})

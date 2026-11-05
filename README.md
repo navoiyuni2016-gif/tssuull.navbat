@@ -181,3 +181,7 @@ Terminalda PDF/sinov yoki printer holati yozuvi yo‘q. Xizmat bosilganda faqat 
 Töliq ketma-ketlik **[KIOSK_VA_TV.md](KIOSK_VA_TV.md)** da. Windows serveri — xizmat; faqat terminalga ruxsat va avtomatik hisob — Windows 10 Pro/Enterprise/Education Assigned Access. Oddiy fullscreen bu çeklovni bermaydi. X96 — mos Android kiosk brauzerda `http://SERVER_IP:8080/tv?autostart=1`, bootda oçiliş, fullscreen va media autoplay. Maxsus APK şart emas.
 
 Yangilangan xizmat örnatgichi loyiha ichidagi eski bazani/loginlarni/ovozlarni yangi örnatişga nusxalaydi; eski server avval töxtatilişi kerak. Eski örnatiş papkasi/xizmati ustidan yozmaydi. Oddiy fullscreen uçun `windows/install-display-autostart.ps1`, nashrni tekşiriş uçun `windows/check-kiosk.ps1`.
+
+## Windows ilovasi (.exe)
+
+Python/PowerShellsiz oson ishga tuşiriş uçun GitHub **Releases** ichidagi `TOShDOTAU-Setup.exe`. Örnatiş, eski bazani köçiriş, printer va Startup: **[EXE_BOSHLASH.md](EXE_BOSHLASH.md)**. EXE alohida Windows runnerida yig‘ilib, haqiqiy paket sinovi ötgaç tarqatiladi. Birinçi oçilişda parol ilova oynasida yaratiladi.

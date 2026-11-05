@@ -5,7 +5,7 @@ from pathlib import Path
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[1]
-FILES=['app.py','alphabet.py','audio_store.py','management.py','printer_adapter.py','runtime.py','windows_service.py','report_exports.py','report_pdf.py','BOSHLASH.cmd','PRINTERNI_SOZLASH.cmd','README.md','KIOSK_VA_TV.md','VALIDATION.md','YO_RIQNOMA.html']
+FILES=['desktop_launcher.py','desktop_runtime.py','EXE_BOSHLASH.md','app.py','alphabet.py','audio_store.py','management.py','printer_adapter.py','runtime.py','windows_service.py','report_exports.py','report_pdf.py','BOSHLASH.cmd','PRINTERNI_SOZLASH.cmd','README.md','KIOSK_VA_TV.md','VALIDATION.md','YO_RIQNOMA.html']
 DIRECTORIES=['web','windows','tests','tools','fonts']
 SUFFIXES={'.py','.js','.css','.html','.ps1','.md','.cmd','.svg','.png','.jpg','.jpeg','.ttf','.txt'}
 
