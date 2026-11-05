@@ -171,3 +171,7 @@ Mavjud serverni qayta oçmasdan sozlash uçun `PRINTERNI_SOZLASH.cmd` faylini se
 Yangilash: serverni töxtating, eski `data` papkasining zaxirasini oling, yangi loyiha fayllarini ösha loyiha papkasiga köçiring; **data papkasini saqlang**. Söng `BOSHLASH.cmd`, kerak bölsa `PRINTERNI_SOZLASH.cmd`. Windows xizmatida esa örnatilgan papkadagi fayllarni yangilab xizmatni qayta yoqing. Printer shu xizmatning LocalService hisobiga ham körinişi kerak.
 
 Logotip ostidagi oq oval olib taşlandi; logotip kök sarlavha ustida oq rangda körsatiladi; hisobotlardagi asl kök logo özgarmaydi. TV kutiş matni kichik ekranda ham qatorga bölinadi. Kiosk uçun `BOSHLASH.cmd` bilan oçing yoki brauzerda **F11** bosing. Haqiqiy TV natijasi uning ekran ölçami va brauzerida sinab köriladi.
+
+## Oddiy terminal oqimi
+
+Terminalda PDF/sinov yoki printer holati yozuvi yo‘q. Xizmat bosilganda faqat Windows printeriga bosma topşiriği yuboriladi; xizmat kartalari ekranda qoladi. Alohida çipta/PDF oynasi va «Çop etiş» tasdiği yo‘q. Yuborilayotganda tugmalar vaqtinça bloklanadi. Bosma navbatiga qabul qilingaç keyingi talabaga tayyor. Xatoda qisqa xabar va **öşa çiptani** qayta çop etiş tugmasi körinadi; yangi çipta yaratilmaydi. Printer sozlanmagan bölsa çipta çiqarilmaydi, xodimga murojaat xabari körinadi.

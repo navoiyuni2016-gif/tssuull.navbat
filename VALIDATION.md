@@ -21,3 +21,7 @@ ZIP manba va ishga tuşiriş skriptlarini öz içiga oladi; Python 3.12+ alohida
 KPOS drayveri aniqlansa faqat yangi çiptalar avtomatik bosmaga ötadi. Uch yangi test drayver mavjudligi, topilmaganda sozlamani saqlash, boshqa printerga tegmaslik va eski preview çiptani qayta çop etmaslikni tekşiradi. Windows drayveri/haqiqiy çek bu Linux muhitida sinalmagan.
 
 Yakuniy 26 Python testi ötdi. Chromium’da shaffof/square logo joyi, 1366×768 terminal/TV siğişi va Windows printer rejimida sektor bosilganda brauzer print oynasi çaqirilmasligi hamda bosma navbatiga yozilişi tasdiqlandi.
+
+## Xizmat → avtomatik çek
+
+Chromium’da terminal xizmatlar oynasida qolişi, PDF/printer holati yozuvi va çipta oynasi yo‘qligi tekşirildi. Bosma jarayonida beshta xizmat tugmasi bloklanadi; ikki marta bosish bitta çipta yaratadi. Simulyatsiya qilingan printer xatosidan keyingi qayta bosma ösha request bilan bajariladi va yangi çipta yaratilmaydi. Bu sinov Windows bosma yakunini taqlid qiladi; haqiqiy qoğoz natijasi qurilmada sinaladi. Yangilangan terminal va TV 1366×768 ekran tekşiruvi ham ötdi.

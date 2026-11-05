@@ -19,7 +19,7 @@ const terminalGuide={
  ru:{title:'Выберите услугу',hint:'Нажмите на нужный отдел и получите билет',steps:['Выберите услугу','Получите билет','Ожидайте вызова'],note:'Получив билет, следите за своим номером на экране',preview:'Режим PDF / предпросмотра',configured:'Принтер настроен'},
  en:{title:'Choose a service',hint:'Tap the department you need and collect your ticket',steps:['Choose a service','Collect your ticket','Wait for your turn'],note:'After collecting your ticket, watch the display for your number',preview:'PDF / preview mode',configured:'Printer configured'}
 };
-function terminalPrinterStatus(){const status=document.querySelector('#terminal-printer-status');if(status&&state){const configured=state.settings.printer_mode==='windows';status.replaceChildren(icon('printer'),document.createTextNode(terminalGuide[lang][configured?'configured':'preview']));status.classList.toggle('configured',configured);}}
+
 
 const copy=key=>terminalCopy[lang][key];
 function updateBrand(){
@@ -104,40 +104,41 @@ function terminal(){
   });
   const guide=el('div');guide.className='terminal-steps';
   terminalGuide[lang].steps.forEach((text,i)=>{const step=el('div',undefined,guide);step.append(icon(['touch','printer','clock'][i]));el('span',(i+1)+'. '+text,step);});
-  const bottom=el('div');bottom.className='terminal-bottom';el('p',terminalGuide[lang].note,bottom);const printer=el('span',undefined,bottom);printer.id='terminal-printer-status';terminalPrinterStatus();
+  const bottom=el('div');bottom.className='terminal-bottom';el('p',terminalGuide[lang].note,bottom);
 }
 async function obtain(service,retry){
-  if(busy)return;busy=true;
+  if(busy)return;busy=true;setKioskBusy(true);
   try{
+    if(state.settings.printer_mode!=='windows')throw Error({uz:'Printer sozlanmagan. Xodimga murojaat qiling.',ru:'Принтер не настроен. Обратитесь к сотруднику.',en:'Printer is not configured. Please contact a staff member.'}[lang]);
     const pending=recovered();
     if(pending&&!retry){if(pending.service!==service)throw Error(copy('recoverFirst'));retry=pending.request;}
     if(retry&&pending?.lang){lang=pending.lang;document.documentElement.lang=lang;}
     requestId=retry||newRequest();lastService=service;remember({service,request:requestId,lang});
-    ticket=await api('tickets',{service,request:requestId,lang});receipt();
-    if(state.settings.printer_mode==='html')setTimeout(()=>window.print(),150);
-  }catch(error){if(error.status===400){remember(null);requestId=null;}throw error;}finally{busy=false}
+    document.querySelector('#kiosk-print-error')?.remove();
+    ticket=await api('tickets',{service,request:requestId,lang});
+    await completeKioskPrint();
+  }catch(error){if(!ticket&&error.status===400){remember(null);requestId=null;}kioskPrintError(error);}finally{busy=false;setKioskBusy(false)}
 }
-function receipt(){
-  lang=ticket.lang||lang;document.documentElement.lang=lang;updateBrand();
-  clear();document.querySelector('#receipt')?.remove();const s=state.services.find(s=>s.id===ticket.service);
-  const name=s?serviceName(s):copy('service');const card=el('div');card.className='card receipt-card';
-  el('h2',labels[lang][1],card);el('div',ticket.label||number(ticket.number),card).className='number';el('p',name,card);
-  el('p',copy('ahead')+': '+ticket.ahead,card);
-  const printStatus=el('p',copy('checking'),card);printStatus.id='print-status';
-  const r=el('article',undefined,document.body);r.id='receipt';r.hidden=true;
-  el('h3',state.university,r);el('p',name,r);el('div',ticket.label||number(ticket.number),r).className='number';
-  el('p',new Date(ticket.created).toLocaleString({uz:'uz-UZ',ru:'ru-RU',en:'en-GB'}[lang],{timeZone:'Asia/Tashkent'}),r);el('p',copy('ahead')+': '+ticket.ahead,r);
-  button(labels[lang][3],async()=>{await api('print',{request:ticket.request});if(state.settings.printer_mode==='html')window.print();await printStatusUpdate()},card);
-  const a=el('a',copy('pdf'),card);a.href='/receipt?request='+encodeURIComponent(ticket.request);a.target='_blank';a.rel='noopener';
-  button(labels[lang][4],()=>{remember(null);requestId=null;ticket=null;terminal()},card);printStatusUpdate();
+function setKioskBusy(value){document.querySelectorAll('.service-card,.language').forEach(b=>b.disabled=value);main.setAttribute('aria-busy',String(value));}
+async function completeKioskPrint(){
+  setKioskBusy(true);
+  for(let attempt=0;attempt<90;attempt++){
+    const job=(await api('print/status',{request:ticket.request})).job;
+    if(job?.status==='sent'){remember(null);ticket=null;requestId=null;document.querySelector('#kiosk-print-error')?.remove();return;}
+    if(!job||!['pending','dispatching'].includes(job.status))throw Error(job?.error||copy(job?.status||'missing'));
+    await new Promise(resolve=>setTimeout(resolve,500));
+  }
+  throw Error(copy('uncertain'));
 }
-async function printStatusUpdate(){
-  const e=document.querySelector('#print-status');if(!ticket||!e)return;
-  try{const j=(await api('print/status',{request:ticket.request})).job;
-    e.textContent=j?.error?(lang==='uz'?j.error:copy(j.status==='uncertain'?'uncertain':'failed')):copy(j?.status||'missing');
-  }catch{e.textContent=copy('offline')}
+function kioskPrintError(error){
+  document.querySelector('#kiosk-print-error')?.remove();
+  const box=el('div');box.id='kiosk-print-error';box.className='kiosk-print-error';box.setAttribute('role','alert');el('p',error.message,box);
+  if(ticket)button({uz:'Qog‘ozni tekshirib, shu chiptani qayta chop etish',ru:'Проверить бумагу и повторить печать билета',en:'Check paper and reprint the same ticket'}[lang],async()=>{
+    if(busy)return;busy=true;setKioskBusy(true);
+    try{await api('print',{request:ticket.request});await completeKioskPrint();}catch(e){kioskPrintError(e)}finally{busy=false;setKioskBusy(false)}
+  },box);
+}
 
-}
 function login(){
   heading('Tizimga kirish');const form=el('form');form.className='card login-form';
   const name=field(form,'Login');name.autocomplete='username';name.required=true;
@@ -306,17 +307,17 @@ async function pollCalls(){
 }
 async function route(){if(isTV())tv();else if(location.pathname==='/admin')await admin();else if(location.pathname==='/staff')await staff();else terminal()}
 async function refresh(){
-  try{state=await api('state');updateBrand();terminalPrinterStatus();document.body.dataset.connection='online';document.querySelector('#connection').textContent='● Ulangan';
+  try{state=await api('state');updateBrand();document.body.dataset.connection='online';document.querySelector('#connection').textContent='● Ulangan';
     if(isTV()){audioFiles=(await api('audio')).files;recorded.configure(audioFiles,state.settings.prefix);const newest=Math.max(0,...state.calls.map(c=>c.id));if(callCursor!==null&&newest<callCursor){callCursor=newest;recorded.lastId=newest;announcer.seen.clear();tvFlasher.lastId=newest;tvFlasher.pending=[];}await pollCalls();tv()}
     if(!started){started=true;await route()}
     if(location.pathname==='/staff'&&document.querySelector('#staff-data')&&!document.activeElement?.matches('select,button'))try{await staffData(await api('work'))}catch{login()}
-    if(ticket)await printStatusUpdate();return true;
+    return true;
   }catch{document.body.dataset.connection='offline';document.querySelector('#connection').textContent='● Aloqa uzildi. Qayta ulanmoqda…';return false}
 }
 if(window.speechSynthesis)window.speechSynthesis.addEventListener('voiceschanged',()=>{if(location.pathname==='/tv-audio'&&state&&!tvFlasher.running){clear();tv()}});
 let refreshBusy=false;async function tick(){if(refreshBusy)return;refreshBusy=true;try{await refresh()}finally{refreshBusy=false}}tick();setInterval(tick,1500);
 function updateClock(){const clock=document.querySelector('#clock');clock.replaceChildren();const now=new Date();el('span',now.toLocaleTimeString('uz-UZ',{timeZone:'Asia/Tashkent',hour:'2-digit',minute:'2-digit'}),clock).className='clock-time';const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tashkent',day:'numeric',month:'numeric',year:'numeric'}).formatToParts(now).map(p=>[p.type,p.value]));const months=['yanvar','fevral','mart','aprel','may','iyun','iyul','avgust','sentabr','oktabr','noyabr','dekabr'];el('span',parts.day+' '+months[Number(parts.month)-1]+' '+parts.year,clock).className='clock-date';}updateClock();setInterval(updateClock,1000);
-let idle;function resetIdle(){clearTimeout(idle);idle=setTimeout(()=>{if(location.pathname==='/'){if(ticket){remember(null);ticket=null;}terminal()}},(state?.settings.idle_seconds||60)*1000)}document.addEventListener('pointerdown',resetIdle);resetIdle();
+let idle;function resetIdle(){clearTimeout(idle);idle=setTimeout(()=>{if(location.pathname==='/'&&!busy&&!recovered()){terminal()}},(state?.settings.idle_seconds||60)*1000)}document.addEventListener('pointerdown',resetIdle);resetIdle();
 const logo=document.querySelector('.seal');const image=new Image();image.alt='Universitet logotipi';image.onload=()=>{logo.replaceChildren(image);logo.classList.toggle('has-logo',!!state?.custom_logo)};image.src='/logo';
 function readBase64(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onerror=()=>reject(Error('Fayl o‘qilmadi'));r.onload=()=>resolve(r.result.split(',')[1]);r.readAsDataURL(file)})}
 async function audioAdmin(parent=main){

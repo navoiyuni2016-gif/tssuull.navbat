@@ -21,22 +21,26 @@ const {chromium}=require('playwright');const {spawn}=require('node:child_process
     for(const slot of ['ticket','prefix_A','window',...Array.from({length:10},(_,i)=>'digit_'+i)]){
       const r=await context.request.post(base+'/api/audio/upload',{data:{slot,name:slot+'.wav',content:wav.toString('base64'),rights_confirmed:true}});assert.equal(r.ok(),true);
     }
+    await context.request.post(base+'/api/settings',{data:{printer_mode:'windows',printer_name:'KPOS_80 Printer(1)',paper_width_mm:80}});
+    // Printer completion is simulated here; real Windows paper output requires device testing.
+    await context.route('**/api/print/status',route=>route.fulfill({json:{job:{status:'sent'}}}));
+    await context.addInitScript(()=>{window.__printCalls=0;window.print=()=>window.__printCalls++;});
     const english=await context.newPage();await english.goto(base+'/');
     await english.getByRole('button',{name:'English',exact:true}).click();
     await english.getByRole('button',{name:'Research and Innovation Services Sector',exact:true}).waitFor();await english.getByRole('heading',{name:'Choose a service',exact:true}).waitFor();assert(await english.getByText('Collect your ticket',{exact:false}).count()>0);
     assert.equal(await english.getByRole('button',{name:'Ўзбекча',exact:true}).count(),0);
     assert.equal(await english.locator('html').getAttribute('lang'),'en');
+    const englishResponse=english.waitForResponse(r=>r.url().endsWith('/api/tickets')&&r.request().method()==='POST');
     await english.getByRole('button',{name:'Student Services Sector',exact:true}).click();
-    await english.getByRole('heading',{name:'TICKET',exact:true}).waitFor();
-    await english.getByRole('button',{name:'Print ticket',exact:true}).waitFor();
-    assert(await english.locator('#main').getByText('People ahead: 0',{exact:true}).isVisible());
-    const stored=await english.evaluate(()=>({request:ticket.request,label:ticket.label}));
+    const stored=await (await englishResponse).json();await english.waitForFunction(()=>!busy);
+    assert.equal(await english.locator('.receipt-card,#terminal-printer-status').count(),0);assert.equal(await english.evaluate(()=>window.__printCalls),0);
+    assert(await english.getByRole('heading',{name:'Choose a service',exact:true}).isVisible());
     const receipt=await context.request.get(base+'/receipt?request='+stored.request);assert((await receipt.text()).includes('People ahead'));
     await english.close();
     const terminal=await context.newPage();await terminal.goto(base+'/');
     await terminal.getByRole('button',{name:'Talabalarga xizmat körsatiş sektori',exact:true}).waitFor();
-    assert.equal(await terminal.locator('nav').isHidden(),true);assert.equal(await terminal.locator('footer').isHidden(),true);assert.equal(await terminal.getByRole('heading',{name:'Xizmat turini tanlang',exact:true}).count(),1);assert.equal(await terminal.locator('.terminal-steps>div').count(),3);assert(await terminal.locator('#terminal-printer-status').textContent().then(t=>t.includes('PDF')));
-    await terminal.getByRole('button',{name:'Talabalarga xizmat körsatiş sektori',exact:true}).click();await terminal.locator('#main .number').filter({hasText:'A002'}).waitFor();
+    assert.equal(await terminal.locator('nav').isHidden(),true);assert.equal(await terminal.locator('footer').isHidden(),true);assert.equal(await terminal.getByRole('heading',{name:'Xizmat turini tanlang',exact:true}).count(),1);assert.equal(await terminal.locator('.terminal-steps>div').count(),3);assert.equal(await terminal.locator('#terminal-printer-status').count(),0);
+    await terminal.getByRole('button',{name:'Talabalarga xizmat körsatiş sektori',exact:true}).click();await terminal.waitForFunction(()=>!busy);assert.equal(await terminal.locator('.receipt-card').count(),0);assert.equal(await terminal.evaluate(()=>window.__printCalls),0);
     const tv=await context.newPage();await tv.addInitScript(()=>{window.__plays=[];const play=Audio.prototype.play;Audio.prototype.play=function(){window.__plays.push(this.src);return play.call(this)}});await tv.goto(base+'/tv-audio');await tv.locator('#tv-current-number').waitFor();
     await tv.getByRole('button',{name:'Ovozni yoqiş',exact:true}).click();
     await tv.waitForFunction(()=>recorded.enabled);await tv.locator('details').evaluate(e=>e.open=true);await tv.getByRole('button',{name:'Ovozni sinaş',exact:true}).click();
@@ -54,6 +58,20 @@ const {chromium}=require('playwright');const {spawn}=require('node:child_process
     assert.equal(await tv.locator('#tv-current-number').evaluate(e=>getComputedStyle(e).opacity),'1');
     await staff.getByRole('button',{name:/Xizmatni bo.*la.*$/}).click();
     await staff.getByRole('button',{name:'Yakunlaş',exact:true}).click();await staff.getByRole('button',{name:'Keyingisini çaqiriş',exact:true}).waitFor({state:'visible'});
+    // Keep services visible, reject duplicate taps while printing, and retry the same ticket after an error.
+    await context.unroute('**/api/print/status');let phase='pending',issued=0;
+    await context.route('**/api/print/status',route=>route.fulfill({json:{job:{status:phase,error:phase==='failed'?'Printer offline':null}}}));
+    terminal.on('request',r=>{if(r.url().endsWith('/api/tickets')&&r.method()==='POST')issued++;});
+    await terminal.getByRole('button',{name:'Talabalarga xizmat körsatiş sektori',exact:true}).click();
+    await terminal.waitForFunction(()=>busy&&ticket);await terminal.locator('.service-card').first().evaluate(e=>{e.click();e.click();});
+    assert.equal(issued,1);assert.equal(await terminal.locator('.receipt-card,#receipt,#terminal-printer-status').count(),0);
+    assert.equal(await terminal.locator('.service-card:disabled').count(),5);
+    phase='failed';await terminal.locator('#kiosk-print-error').waitFor();await terminal.waitForFunction(()=>!busy);
+    const sameRequest=await terminal.evaluate(()=>ticket.request);
+    phase='sent';await terminal.locator('#kiosk-print-error button').click();await terminal.waitForFunction(()=>!busy&&ticket===null);
+    assert.equal(issued,1);assert.equal(await terminal.evaluate(()=>sessionStorage.getItem('navbat-pending')),null);
+    const jobs=await context.request.post(base+'/api/print/status',{data:{request:sameRequest}});assert(jobs.ok());
+    assert.equal(await terminal.locator('#kiosk-print-error').count(),0);assert.equal(await terminal.evaluate(()=>window.__printCalls),0);
     assert.deepEqual(errors,[]);console.log('PASS browser: alphabet, admin pages, WAV upload, real WAV playback queue, terminal -> staff -> TV -> finish');
   }finally{if(browser)await browser.close();server.kill();}
 })().catch(error=>{console.error(error);process.exitCode=1});
