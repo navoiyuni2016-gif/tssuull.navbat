@@ -1,5 +1,7 @@
 # Universitet elektron navbat tizimi
 
+**Windows uçun tayyor ilova:** [TOShDOTAU-Setup.exe](https://github.com/navoiyuni2016-gif/tssuull.navbat/releases/latest/download/TOShDOTAU-Setup.exe). Python alohida kerak emas. [EXE yöriqnomasi](EXE_BOSHLASH.md). Quyidagi Python buyruqlari manba nusxasi uçun.
+
 Terminal → çipta → xodim çaqiruvi → TV → xizmatni yakunlaş. Server va SQLite bazasi terminalning özida işlaydi; işlaş vaqtida internet, Docker, taşqi server va eski DLL talab qilinmaydi. Python 3.12+ kerak. Frontend resurslari lokal.
 
 Interfeys siz tanlagan yozuvda: **Ş, Ç, Ğ, Ö**. Masalan: **Çipta**, **Xizmat körsatiş**, **Özbekça**. Texnik fayl nomlari, URL, login va buyruqlar özgarmaydi. Terminal tillari: UZ / RU / EN. Kirill tanlovi örniga ingliz tili qoşildi.

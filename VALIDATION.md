@@ -31,3 +31,16 @@ Chromium’da terminal xizmatlar oynasida qolişi, PDF/printer holati yozuvi va 
 27 Python testi ötdi. Yangi örnatişga köçiriş sinovi baza/loginlar/çiptalar va audio nusxasini, mavjud manzilga yozmaslikni va işlayotgan server bazasini köçirmaslikni tekşirdi. Chromiumda `/tv?autostart=1` sahifasi va autoplay ruxsati bilan yozuvli ovozning avtomatik yoqilişi ötdi; umumiy terminal→operator→TV oqimi ham ötdi. Xizmat örnatgichidagi service executable yöli tuzatildi.
 
 Windows PowerShell parseri va Windows SCM/Task Scheduler/Assigned Access bu Linux muhitida mavjud emas. Shu sabab Windows skriptlari qurilmada bajarilmadi. X96 proşivkasi, Android boot/launcher ruxsatlari, HDMI-CEC va haqiqiy ovoz avtomatik oçilişi tekşirilmagan. Oddiy fullscreen tizimni qulflamaydi; cheklangan kiosk Windows nashriga qarab Assigned Access orqali bir marta sozlanadi. Töliq yöriq KIOSK_VA_TV.md ichida.
+
+## Windows EXE — 2026-11-05
+
+Windows runnerida muvaffaqiyatli yig‘ilgan va tarqatilgan release: **windows-4**, manba commit `c6e6162`. Dalil: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42084075436 .
+
+- 32 manba testi: 31 ötdi, hali yig‘ilmagan frozen paket testi shu bosqiçda ötkazib yuborildi. Yig‘ilgandan keyin aynan öşa frozen test alohida ötdi.
+- Haqiqiy Windows x64 EXE ichida Tk oçilishi, SQLite A001 çiptasi, PNG fon/logo, shrift va PowerShell printer resurslari, XLSX/DOCX/PDF eksportlari tekşirildi.
+- Frozen EXEning fondagi serveri alohida jarayonda ishga tushdi: health, terminal HTML va HTTP orqali çipta oliş ötdi.
+- NSIS Windows örnatuvçisi va portativ ZIP yaratildi, GitHub Releases’ga joylandi. Mahalliy qayta yuklangan örnatuvçi SHA256 bilan mos; installer PE sarlavhasi, ilovaning x64 PE turi, ZIP yaxlitligi va Python/PyInstaller litsenziyalari tekşirildi.
+- Windows’da aniqlangan SQLite fayli oçiq qoliş muammosi tuzatildi: tranzaksiya yakunlanganda ulaniş ham darhol yopiladi. Commit/rollback va darhol faylni öçiriş regressiya testi qoşildi.
+- Tuzatişdan keyin Linuxda 32 test (31 ötdi, Windows frozen testi ötkazib yuborildi), Chromiumdagi terminal→operator→TV jarayoni ham ötdi.
+
+Jismoniy printer, foydalanuvçi qurilmasidagi installer oynalarini bosib örnatiş, Windows boot/Assigned Access va X96 hali shu qurilmalarda sinov talab qiladi. Raqamli kod imzosi yo‘q. Windows testlari manba yoki soxta EXEni emas, haqiqiy PyInstaller paketini işga tuşirdi.
