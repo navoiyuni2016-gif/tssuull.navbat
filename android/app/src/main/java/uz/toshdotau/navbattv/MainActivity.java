@@ -33,6 +33,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.ScrollView;
 import android.widget.Toast;
 import java.io.ByteArrayInputStream;
 
@@ -133,8 +134,9 @@ public class MainActivity extends Activity {
         EditText confirm=input(box,"PINni takrorlang","",true);
         CheckBox boot=new CheckBox(this);boot.setText("Box yoqilganda avtomatik oçiş");boot.setChecked(prefs.getBoolean("autostart",true));box.addView(boot);
         TextView instructions=new TextView(this);instructions.setText("Android 10+ da avtostart uçun ilovani Home/Launcher sifatida tanlang. Sozlamalar: pultda MENU yoki BACK → PIN.");box.addView(instructions);
-        settingsDialog=new AlertDialog.Builder(this).setTitle("TOŞDÖTAU TV — sozlamalar").setView(box).setPositiveButton("Saqlaş",null).setNegativeButton(server.isEmpty()?"Çiqiş":"Yopiş",(dialog,which)->{if(server.isEmpty())finish();}).setNeutralButton("Android / Home sozlamalari",null).create();
-        settingsDialog.setCancelable(!server.isEmpty());settingsDialog.show();
+        ScrollView scroll=new ScrollView(this);scroll.addView(box);
+        settingsDialog=new AlertDialog.Builder(this).setTitle("TOŞDÖTAU TV — sozlamalar").setView(scroll).setPositiveButton("Saqlaş",null).setNegativeButton(server.isEmpty()?"Çiqiş":"Yopiş",(dialog,which)->{if(server.isEmpty())finish();}).setNeutralButton("Android / Home sozlamalari",null).create();
+        settingsDialog.setCancelable(!server.isEmpty());settingsDialog.show();settingsDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         settingsDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{try{saveConfiguration(address.getText().toString(),pin.getText().toString(),confirm.getText().toString(),boot.isChecked());settingsDialog.dismiss();}catch(IllegalArgumentException error){address.setError(error.getMessage());}});
         settingsDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{
             try{startActivity(new Intent(server.isEmpty()?Settings.ACTION_SETTINGS:Settings.ACTION_HOME_SETTINGS));}
