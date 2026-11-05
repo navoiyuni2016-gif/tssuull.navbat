@@ -1,5 +1,5 @@
 /* Keep all five windows visible when a TV box uses a dense 960x540 CSS viewport. */
-@media(min-width:600px) and (max-height:650px){
+@media(min-width:600px) and (max-height:850px){
  body.tv{height:100vh;min-height:0;overflow:hidden}
  body.tv header{min-height:62px;padding:7px 2%;gap:14px;flex-shrink:0}
  body.tv header .seal,body.tv header .seal.has-logo{width:46px;height:46px}
@@ -15,7 +15,7 @@
  body.tv .tv-section-title{font-size:18px!important;line-height:1.2;margin-bottom:8px!important;gap:9px}
  body.tv .tv-section-title::before{min-height:22px;width:6px}
  body.tv .tv-windows .tv-section-title{font-size:17px!important}
- body.tv #tv-current-number{font-size:clamp(80px,18vh,130px);letter-spacing:-4px;line-height:1;margin:auto 0 8px}
+ body.tv #tv-current-number{font-size:clamp(96px,22vh,190px);letter-spacing:-4px;line-height:1;margin:auto 0 8px}
  body.tv #tv-current-window{font-size:24px;padding:10px 12px;border-radius:11px}
  body.tv #tv-current-service{font-size:13px;line-height:1.2;min-height:16px;margin:8px 0 0}
  body.tv #tv-calls{border-spacing:0 6px}
