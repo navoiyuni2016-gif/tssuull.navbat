@@ -209,7 +209,8 @@ async function adminSection(key,data,panel){
       if(![...printerList.options].some(o=>o.value===fields.printer_name.value)){const o=el('option',fields.printer_name.value||'Printer topilmadi',printerList);o.value=fields.printer_name.value;o.selected=true;}
       info.textContent=d.error||('Windows hisobi: '+d.account+' · Spooler: '+d.spooler+'. Printed — Windows navbatiga qabul qilindi; haqiqiy qog‘oz chiqishi alohida tekshiriladi.');
       jobs.replaceChildren();
-      for(const job of d.tests||[]){el('p','Sinov #'+job.id+': '+job.status+(job.error?' — '+job.error:''),jobs);if(!['pending','printing'].includes(job.status))diagnosticRequest=null;}
+      diagnosticRequest=d.tests?.length&&['pending','printing'].includes(d.tests[0].status)?d.tests[0].request:null;
+      for(const job of d.tests||[]){el('p','Sinov #'+job.id+': '+job.status+(job.error?' — '+job.error:''),jobs);}
       for(const job of d.jobs||[]){const row=el('p',job.label+' · '+job.status+(job.error?' — '+job.error:''),jobs);if(!['pending','printing'].includes(job.status))button('Shu chiptani qayta chop etish',async()=>{if(!confirm('Qog‘ozni tekshiring. Shu chiptani qayta chop etasizmi?'))return;await api('print',{request:job.ticket_request,previous_job:job.id,attempt:newRequest()});await inspectPrinter()},row);}
     }
     button('Printerlarni yangilash',inspectPrinter,diagnostics);
