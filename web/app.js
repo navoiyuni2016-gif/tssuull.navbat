@@ -263,19 +263,32 @@ async function adminSection(key,data,panel){
   }
   if(key==='displays'){
     el('h2','Elektron tablolar',panel);
-    el('p','Hozir faqat apparatsiz sinov ishlaydi. Haqiqiy LED protokoli tasdiqlanmagan; COM/IP/agentga buyruq yuborilmaydi.',panel);
+    el('p','COM yoki IP orqali qo‘lda HEX profil bilan yuborish mumkin. Avtomatik protokol aniqlanmaydi; bu tabloning haqiqiy buyruqlarini kiriting. sent — baytlar yuborildi, LED tasdig‘i emas.',panel);
     const d=await api('displays');
     el('p','Windows portlari: '+(d.discovery.serial_ports.join(', ')||'Topilmadi')+'. Port topilishi LED aniqlanganini bildirmaydi.',panel).className='technical';
     const reload=async()=>{panel.replaceChildren();await adminSection('displays',await api('admin'),panel)};
+    const download=el('a','Tablo sozlamalarini JSONga saqlash',panel);download.href='/api/displays/profile';download.download='TOShDOTAU-tablo-sozlamalari.json';download.className='export-button';
+    const imports=el('form',undefined,panel);imports.className='card';const upload=field(imports,'Tablo sozlamalarini JSONdan yuklash','file');upload.accept='.json,application/json';upload.required=true;
+    submitForm(imports,async()=>{const file=upload.files[0];if(!file||file.size>1024*1024)throw Error('JSON fayl 1 MB gacha bo‘lsin');const body=JSON.parse(await file.text());await api('displays/import',body);await reload()});
+    el('p','HEX belgilar: {address8}, {address_ascii}, {label_ascii}, {number_ascii}, {number_le16}, {number_be16}, {window8}, {xor8}, {sum8}, {modbus16}. Tayyor qurilma shabloni avtomatik kiritilmaydi.',panel).className='technical';
     for(const w of data.windows){
       const saved=d.devices.find(v=>v.window===w.id);
       const f=el('form',undefined,panel);f.className='card form-grid';el('h3',w.id+'-oyna',f);
-      el('p',!saved?'Sozlanmagan':saved.status==='simulation'?'Sinov rejimi — haqiqiy qurilma ulanmagan':saved.status==='disabled'?'O‘chirilgan':'Bloklangan — protokol tasdiqlanmagan',f);
+      el('p',!saved?'Sozlanmagan':saved.status==='simulation'?'Sinov rejimi — haqiqiy qurilma ulanmagan':saved.status==='disabled'?'O‘chirilgan':saved.status==='configured'?'Qo‘lda profil tayyor — ulanish hali tekshirilmagan':'Port parametrlari va HEX protokolni kiriting',f);
       const address=field(f,'Qurilma ID manzili','text',saved?.device_address||String(w.id));address.maxLength=64;
-      const transport=choice(f,'Ulanish turi',[['mock','Apparatsiz sinov'],['serial','COM — bloklangan'],['tcp','IP — bloklangan'],['agent','Operator agenti — bloklangan']],saved?.transport||'mock');
+      const transport=choice(f,'Ulanish turi',[['mock','Apparatsiz sinov'],['serial','COM — qo‘lda profil'],['tcp','IP — qo‘lda profil'],['agent','Operator agenti — bloklangan']],saved?.transport||'mock');
       const endpoint=field(f,'COM port / IP / agent manzili','text',saved?.endpoint||'');endpoint.maxLength=200;endpoint.className='technical';
+      const p=saved?.profile||{};const advanced=el('details',undefined,f);advanced.className='display-parameters';el('summary','Qo‘lda port va protokol sozlamalari',advanced);
+      const fields={};for(const [key,label,min,max] of [['baud_rate','Baud rate',50,4000000],['data_bits','Data bits',5,8],['segments','Belgilar soni',1,16],['timeout_ms','Ulanish kutishi (ms)',100,60000],['tcp_port','IP port',1,65535],['checksum_start','Checksum boshlanish bayti',0,511]]){const input=field(advanced,label,'number',p[key]??'');input.min=min;input.max=max;input.step=1;fields[key]=input;}
+      const parity=choice(advanced,'Parity',[['','Aniqlanmagan'],['N','None (N)'],['E','Even (E)'],['O','Odd (O)'],['M','Mark (M)'],['S','Space (S)']],p.parity||'');
+      const stop=choice(advanced,'Stop bits',[['','Aniqlanmagan'],['1','1'],['1.5','1.5'],['2','2']],p.stop_bits||'');
+      const protocol=choice(advanced,'Protokol',[['','Hali kiritilmagan'],['manual_hex','Qo‘lda HEX shablon']],p.protocol||'');
+      const model=field(advanced,'Tablo modeli / nomi','text',p.model||'');model.maxLength=200;
+      const show=field(advanced,'Raqam chiqarish HEX shabloni','text',p.show_template||'');show.maxLength=2000;show.className='technical';
+      const blank=field(advanced,'Tozalash HEX shabloni','text',p.clear_template||'');blank.maxLength=2000;blank.className='technical';
+      const note=field(advanced,'Protokol izohi / manbasi','text',p.protocol_note||'');note.maxLength=1000;
       const on=field(f,'Faol','checkbox');on.checked=!!saved?.enabled;
-      submitForm(f,async()=>{await api('displays',{window:w.id,device_address:address.value,transport:transport.value,endpoint:endpoint.value,enabled:on.checked});await reload()});
+      submitForm(f,async()=>{const profile={parity:parity.value,stop_bits:stop.value,protocol:protocol.value,model:model.value,protocol_note:note.value,show_template:show.value,clear_template:blank.value};for(const [key,input] of Object.entries(fields))profile[key]=input.value===''?null:Number(input.value);await api('displays',{window:w.id,device_address:address.value,transport:transport.value,endpoint:endpoint.value,enabled:on.checked,profile});await reload()});
       if(saved){
         el('p','Oxirgi sinov qiymati: '+(saved.last_value??'—'),f).className='technical';
         const value=field(f,'Sinov raqami','text','A025');value.maxLength=12;

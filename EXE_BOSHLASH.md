@@ -59,3 +59,8 @@ Administrator → **Elektron tablolar**: oyna, ID, ulaniş manzili va apparatsiz
 5. Hisobotlarda 3 ta alohida jami va batafsil jadval bor; Excelda to‘rtinçi varaq, Word/PDFda qo‘şimça jadval. Murojaat sanasi — **yuborilgan sana**, holati esa hisobot oliniş paytidagi joriy natija. Oddiy navbat statistikasi avvalgidek çipta yaratilgan kun böyiça.
 
 **Hisoblaş:** hal qilingan çipta yakunlangan xizmat bölib, uni yakunlagan administratorga yoziladi; yönaltirgan xodim va bölim murojaat yozuvida alohida saqlanadi. Hal qilinmagan yoki kutayotgan murojaat yakunlangan xizmat deb sanalmaydi. Bir xil sörov takrori ikkinçi murojaat/natija yaratmaydi. Yakuniy natija ustidan yozilmaydi; yuboriş va yakunlaş tarixi bazada saqlanadi. Hali iş tugamagan bölsa, murojaatni kutilmoqda holatida qoldiring.
+
+
+## Yangilanish: qölda haqiqiy LED ulanişi
+
+Oldingi «faqat simulyator» cheklovi yangi **COM/IP qo‘lda HEX profil** bilan almashtirildi. F10 → Elektron tablolar → Qo‘lda port va protokol sozlamalari. Parametrlar, raqam chiqarish va tozalaş HEX shablonini özingiz kiritasiz; to‘liq faol profil bilan operator chaqiruvi avtomatik yuboriladi. JSON saqlash/yuklash mavjud. Taxminiy qurilma buyrug‘i to‘ldirilmaydi. [To‘liq qo‘lda sozlash yo‘riqnomasi](LED_QOLDA_SOZLASH.md).

@@ -14,7 +14,7 @@ shutil.copyfile(license,output/'LICENSE-PyInstaller.txt')
 for license in (Path(sys.base_prefix)/'tcl').rglob('license.terms'):
     shutil.copyfile(license,output/(license.parent.name+'-license.terms'))
 
-for name in ('pywebview','pythonnet','clr_loader','bottle','proxy_tools','cffi','pycparser'):
+for name in ('pywebview','pythonnet','clr_loader','bottle','proxy_tools','cffi','pycparser','pyserial'):
     dist=importlib.metadata.distribution(name)
     for entry in dist.files or []:
         if 'license' in str(entry).lower() and ('.dist-info/' in str(entry)) and dist.locate_file(entry).is_file():

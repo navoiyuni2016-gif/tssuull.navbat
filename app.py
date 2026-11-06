@@ -248,11 +248,13 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 with connect() as c:return self.send(200,{'referrals':referrals.listing(c,status=parse_qs(parsed.query).get('status',[''])[0])})
             except ValueError as error:return self.send(400,{'error':str(error)})
-        if self.path == '/api/displays':
+        if self.path in ('/api/displays','/api/displays/profile'):
             u=self.user()
             if not u or u['role']!='admin':return self.send(403,{'error':'Administrator login required'})
             import display_adapter
-            with connect() as c:return self.send(200,display_adapter.state(c))
+            with connect() as c:
+                if self.path.endswith('/profile'):return self.binary(json.dumps(display_adapter.export_profile(c),ensure_ascii=False,indent=2).encode(),'application/json; charset=utf-8','TOShDOTAU-tablo-sozlamalari.json')
+                return self.send(200,display_adapter.state(c))
         if self.path == '/api/audio':
             with connect() as c:
                 return self.send(200, {'files':audio_store.manifest(c)})
@@ -319,12 +321,12 @@ class Handler(BaseHTTPRequestHandler):
         if (origin and origin != 'http://' + self.headers.get('Host','')) or self.headers.get('Content-Type') != 'application/json':
             return self.send(403,{'error':'Same-origin JSON required'})
         try:
-            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update','/api/printer/test','/api/displays','/api/displays/command','/api/referrals/resolve'):
+            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update','/api/printer/test','/api/displays','/api/displays/command','/api/referrals/resolve','/api/displays/import'):
                 u = self.user()
                 if not u or u['role'] != 'admin':
                     return self.send(403,{'error':'Administrator login required'})
             size = int(self.headers.get('Content-Length',0))
-            limit = 12 * 1024 * 1024 if self.path in ('/api/audio/upload','/api/logo') else 8192
+            limit = 1024*1024 if self.path=='/api/displays/import' else 16384 if self.path=='/api/displays' else 12 * 1024 * 1024 if self.path in ('/api/audio/upload','/api/logo') else 8192
             if not 0 < size <= limit:
                 raise ValueError('Invalid request size')
             body = json.loads(self.rfile.read(size))
@@ -350,11 +352,12 @@ class Handler(BaseHTTPRequestHandler):
                     c.execute('BEGIN IMMEDIATE')
                     row=referrals.resolve(c,self.user(),body.get('id'),body.get('status'),body.get('comment'),now())
                 return self.send(200,{'referral':row})
-            if self.path in ('/api/displays','/api/displays/command'):
+            if self.path in ('/api/displays','/api/displays/command','/api/displays/import'):
                 import display_adapter
                 with connect() as c:
                     c.execute('BEGIN IMMEDIATE')
                     if self.path=='/api/displays':display_adapter.save(c,body);result={'ok':True}
+                    elif self.path=='/api/displays/import':display_adapter.import_profile(c,body);result={'ok':True}
                     else:result={'job':display_adapter.command(c,body)}
                 return self.send(200,result)
             if self.path == '/api/printer/test':

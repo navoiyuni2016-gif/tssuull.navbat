@@ -71,6 +71,21 @@ class FrozenWindows(unittest.TestCase):
                 post('referrals/resolve',{'id':case['id'],'status':'unresolved','comment':'Frozen administrator outcome'})
                 with opener.open('http://127.0.0.1:8080/api/reports',timeout=5) as response:report=json.load(response)
                 self.assertEqual(report['referrals']['unresolved'],1);self.assertEqual(report['served'],0)
+                # Real packaged TCP path to a synthetic receiver; never physical hardware.
+                import socket,threading
+                with socket.socket() as receiver:
+                    receiver.bind(('127.0.0.1',0));receiver.listen();receiver.settimeout(10);received=[]
+                    def accept_frame():
+                        connection,_=receiver.accept()
+                        with connection:received.append(connection.recv(512))
+                    listener=threading.Thread(target=accept_frame);listener.start()
+                    profile={'protocol':'manual_hex','tcp_port':receiver.getsockname()[1],'timeout_ms':1000,'show_template':'02 {label_ascii} 03','clear_template':'00'}
+                    post('displays',{'window':1,'device_address':'130','transport':'tcp','endpoint':'127.0.0.1','enabled':True,'profile':profile})
+                    with opener.open('http://127.0.0.1:8080/api/displays/profile',timeout=5) as response:exported=json.load(response)
+                    post('displays/import',exported)
+                    post('displays/command',{'device':display['devices'][0]['id'],'operation':'show','value':'B025'})
+                    listener.join(timeout=12);self.assertEqual(received,[b'\x02B025\x03'])
+
                 for fmt in ('xlsx','docx','pdf'):
                     with opener.open('http://127.0.0.1:8080/api/reports/export?format='+fmt,timeout=20) as response:self.assertGreater(len(response.read()),1000)
 

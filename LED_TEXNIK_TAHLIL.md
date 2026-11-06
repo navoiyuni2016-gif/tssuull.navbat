@@ -101,3 +101,8 @@ Bu baytlar **COM2 yoki LEDga yuboriladigan freym emas**. Ularni bevosita qurilma
 ### Katta arxiv bo‘yicha çegara
 
 Keyin yuborilgan `HardwareService.rar` executor transfer çegarasidan (**32 MiB**) katta bölgani sababli yuklab olinmadi. Bu arxivning içi tahlil qilinmadi. `HardwareServiceHost.exe`ni alohida yoki kerakli dastur/DLL/config/loglarni har biri 32 MiBdan kichik arxivlarda yuboriş kerak. Avval olingan 221 696 baytli DLL va 4 316 baytli config tahlili amalda qoladi. Hozirgi **windows-16** paketida ham fizik LED transportlari bloklangan.
+
+
+## Keyingi talab: qölda profil bilan yuboriş
+
+Foydalanuvchining keyingi «EXE’da bloklama, qo‘lda kiritilsin» ko‘rsatmasi asosida umumiy COM/IP blokirovkasi olib tashlandi. Faqat administrator to‘liq port parametrlari va show/clear HEX shablonlarini kiritgan faol manual_hex profil real transportdan foydalanadi. Bu eski fizik protokol topilganini anglatmaydi; qurilma baytlari foydalanuvchi shablonidan keladi. Hech qanday ishlab chiqaruvchi paketi avtomatik taxmin qilinmadi. [Manual rejim qoidalari](LED_QOLDA_SOZLASH.md).

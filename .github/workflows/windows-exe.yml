@@ -12,6 +12,9 @@ on:
       - 'native_smoke.py'
       - 'printer_adapter.py'
       - 'display_adapter.py'
+      - 'display_protocol.py'
+      - 'tests/test_display_profiles.py'
+      - 'tests/test_display_protocol.py'
       - 'referrals.py'
       - 'tests/test_referrals.py'
       - 'report_exports.py'
@@ -44,7 +47,7 @@ jobs:
       - name: Install build tools
         shell: pwsh
         run: |
-          python -m pip install pyinstaller==6.16.0 pywebview==6.2.1 pythonnet==3.0.5 pillow==11.3.0
+          python -m pip install pyinstaller==6.16.0 pywebview==6.2.1 pythonnet==3.0.5 pillow==11.3.0 pyserial==3.5
           if ($LASTEXITCODE -ne 0) { throw 'PyInstaller installation failed' }
           if (!(Test-Path "${env:ProgramFiles(x86)}\NSIS\makensis.exe")) {
             choco install nsis --yes --no-progress
