@@ -50,3 +50,9 @@ Administrator → Xizmatlar → Bölim harfi: 1–3 katta lotin harfi, ikki xizm
 6. Ilovani parol bilan yoping va qayta oçing: baza saqlanişi, port band bölmasligi va lokal operator/X96 ulanişini tekşiring.
 
 Haqiqiy KPOS_80 printer bu muhitga ulanmagan: fizik 80 mm çek, qog‘oz uzilişi, foydalanuvçi qurilmasidagi boot/OS qulfi va X96 apparat sinovi muvaffaqiyatli deb körsatilmadi. Native fullscreen Windows’dagi barcha boshqa dasturlarni bloklaydigan OS siyosati örnini bosmaydi.
+
+## Tekşirilgan paket
+
+**windows-13**, manba `860ca60582a2684979b219591c4ffd3dcc378be9`. Windows CI: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42173128364 — muvaffaqiyatli. 40 manba testi, 2 haqiqiy frozen EXE testi, 10 Node ovoz testi va Chromium oqim/layout tekşiruvlari ötdi. Batafsil dalillar [VALIDATION.md](VALIDATION.md)da.
+
+Yuklaş: https://github.com/navoiyuni2016-gif/tssuull.navbat/releases/download/windows-13/TOShDOTAU-Setup.exe . Portativ töliq ZIP va SHA256 shu release sahifasida. Lokal yiğilgan fayllar `dist/`ga joylangan; fayllar Git’ga kiritilmaydi.

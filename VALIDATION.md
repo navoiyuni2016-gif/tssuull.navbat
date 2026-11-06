@@ -56,3 +56,18 @@ Tekşirilgan manba commit `5691eb5`; Android workflow: https://github.com/navoiy
 - Imzolangan APK ichidagi uslub sinovdan ötgan manba bilan mos. APK v1, v2 va v3 imzolari Android API 21 minimumi bilan apksigner’da tasdiqlandi. Public GitHub APK qayta yuklab olinib mahalliy imzolangan fayl bilan SHA256 mosligi tekşirildi. Maxfiy signing key Git’dan taşqarida saqlanadi.
 
 Haqiqiy X96 proşivkasi, HDMI ekran, karnay va tokdan keyingi Home/boot davranishi hali qurilmada sinalmagan. Android 10+ avtostart uçun Home/Launcher tanlovi kerak. APK universal klient, Windows’dagi mavjud lokal serverga ulanadi; bazani köçirmaydi.
+
+## Native Windows va bölim prefikslari — 2026-11-06
+
+Yakuniy ilova manbasi `860ca60582a2684979b219591c4ffd3dcc378be9`, release **windows-13**. Git tag aynan shu commitga mosligi tekşirildi. Windows yiğişi va haqiqiy EXE sinovlari: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42173128364 — barcha bosqiçlar muvaffaqiyatli.
+
+- Linux manba: `python -m unittest discover -s tests -q` — 42 test, 40 ötgan, 2 Windows-only ötkazib yuborilgan. Windows CI shu manba testlarini qayta bajardi.
+- Windows’da PyInstaller orqali yiğilgan haqiqiy EXEning ikki testi ötdi: Tk/resurslar/SQLite/uch hisobot formati/server/KPOS sozlama/read-only printer diagnostikasi; haqiqiy WebView2 oynasi, beshta xizmat, F10 lokal buyruği va administrator login sahifasi.
+- Native loaded hodisasidagi parallel handler va test örtasidagi vaqt poygasi aniq readiness belgisi bilan tuzatildi; keyingi EXE sinovi ötdi. Content-Security-Policy yumşatilmadi, eval/JS API bridge qöşilmadi.
+- `node tests/test_recordings.js`, `node tests/test_announcer.js` — 10 test ötgan; turli bölim harflari uçun toğri ovoz va yetişmayotgan yozuvlar tekşirildi.
+- `node tests/smoke_browser.js` — haqiqiy Chromium’da admin bölim harfini Z ga almaştirib, API’da saqlanişi va B ga qaytariş; audio yuklaş/ijro, terminal → xodim → TV, 3 marta yonib-öçiş, bosma xatosida bir çiptani qayta bosiş ötdi. Bosma yakuni bu brauzer sinovida simulyatsiya qilingan.
+- `node tests/android_tv_layout.js` — beshta faol oyna 640×360, 853×480, 960×540, 1280×720, 1366×768 ölchamlarda siğdi. Bu Chromium tekşiruvi, X96 apparat sinovi emas.
+- Eski bazaga prefiks ustuni xavfsiz qöşilişi, A–E boshlanğiç harflar, eski çiptalar özgarmasligi, request takrorida raqam saqlanişi va prefiksning takrorlanmasligi alohida testlarda ötgan.
+- Serverni yopiş → portni böşatiş → qayta oçiş → çiptaning saqlanişi, ikkinçi serverni rad etiş va administrator parolini tekşiriş testi ötgan.
+
+Jismoniy KPOS_80 printer ulanmagan. Haqiqiy qoğoz, USB uzilişi, Windows 10/11 foydalanuvçi qurilmasidagi örnatiş/boot va X96 ekran-karnay natijalari bu dalillarga kirmaydi. Qurilma diagnostikasi va sinov çeki [WINDOWS_TUZATISH_HISOBOTI.md](WINDOWS_TUZATISH_HISOBOTI.md)da.
