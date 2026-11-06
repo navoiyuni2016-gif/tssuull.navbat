@@ -100,3 +100,17 @@ Manba `5a8b198805c8d4826c2942f887dc352256c5e8cb`, release **windows-16**. Window
 - Frozen Windows EXEda HTTP orqali murojaat yaratildi, admin «unresolved» natija saqladi, hisobot statusi va barcha uch formatdagi yuklaşlar ötdi. Native WebView2/F10/login sinovi ham ötdi.
 
 LED DLL/config: statik .NET tahlili orqali faqat localhost:7777 UTF-16LE IPC formati tasdiqlandi. Fizik serial freym va COM parametrlari tasdiqlanmadi. DLL/EXE bajarilmadi, real portga buyruq yuborilmadi. Yangi `HardwareService.rar` 32 MiB executor transfer çegarasidan katta bölgani uçun yuklab olinmadi va içi tekşirilgan deb körsatilmadi. To‘liq dalillar [LED_TEXNIK_TAHLIL.md](LED_TEXNIK_TAHLIL.md)da. Jismoniy KPOS/LED va foydalanuvçi kompyuteridagi Windows boot sinovi bu natijalarga kirmaydi.
+
+## Qölda COM/TCP profili — windows-17
+
+Foydalanuvchining keyingi «EXE’da bloklama, qo‘lda kiritilsin» ko‘rsatmasi asosida COM/IPning umumiy blokirovkasi **manual_hex** profil uchun olib tashlandi. Manba `6034d5f33d2b6c263166b36475033289f0b76f0f`, release **windows-17**. Windows CI muvaffaqiyatli: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42183086507 .
+
+- Manba: 65 test (63 ötgan, manba bosqiçida 2 frozen-only skip); Windows’da haqiqiy EXEning 2 testi ham ötdi.
+- Regressiya avval yangi parametrlar/JSON eksport/import yo‘qligi va invalid profile qabul qilinişini körsatdi; implementatsiyadan keyin barcha 5 profil testi ötdi. Restartda parametrlar saqlandi, eski klient manual maydonlarni yubormasa ular öçmadi; noto‘g‘ri import to‘liq qaytarildi; ikki manzilni almaştirişda qurilma ID/tarixlari saqlandi.
+- 5 ta protokol testi: mustaqil XOR8 va SUM8 vektorlari, standart `123456789` uchun Modbus CRC16 `0x4B37`, prefix saqlanişi, noto‘g‘ri/böş freymlarni rad etiş, sinov TCP qabul qiluvçisiga aniq baytlar yetişi. Bu HEX vektorlari faqat sintetik testlar; foydalanuvchi LED modeli protokoli emas.
+- COM argumentlari fake port bilan tekşirildi (baud/data bits/parity/stop bits); haqiqiy COM port oçilmadi. Qisman yuboriş xatosida uncertain holati, avtomatik takror yo‘qligi va operator/TV çaqiruvining saqlanişi ötdi.
+- `node tests/display_profiles_browser.js`: qo‘lda parametrlarni kiritish, configured holati, JSON eksport/import ötdi. `node tests/smoke_browser.js`: amaldagi audio/printer/terminal/operator/TV oqimi ötdi.
+- Frozen Windows EXE API orqali manual TCP profil saqlandi va JSON eksport/import qilindi. Paket ichidagi worker mahalliy **sintetik qabul qiluvçiga** aynan `02 42 30 32 35 03` baytlarini yubordi. Fizik tabloga paket yuborilmadi.
+- Paketga pyserial 3.5 va litsenziyasi, qo‘lda sozlash yo‘riqnomasi kiritildi. Setup/ZIP Windows PE x64 va universitet ikonkasini saqlaydi. Yakuniy yuklashda SHA256 va ZIP CRC tekşiriladi.
+
+Userning haqiqiy COM2 baud/parity/stop bits va fizik show/clear shablonlari hali aniqlanmagan. To‘liq profil bo‘lsa real COM/TCP yozuvi yoqiladi; bu model avtomatik topilganini yoki apparat tasdiğini anglatmaydi. `sent` faqat transport yozuvi tugaganini bildiradi; LED ACK yoki ekran ko‘rinishi tasdiqlanmaydi. Agent transporti amalga oşirilmagan. Qoidalar va formatlar: [LED_QOLDA_SOZLASH.md](LED_QOLDA_SOZLASH.md).

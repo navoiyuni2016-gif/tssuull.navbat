@@ -202,3 +202,7 @@ Administrator → **Elektron tablolar** apparatsiz sinov, oyna/ID/manzil sozlama
 Xodimning joriy çipta oynasida **Boşqa xizmatga yönaltiriş → Administrator — muammoli murojaat** tanlanadi. Izoh majburiy; operator oynasi böşaydi, yangi çipta/bosma yaratilmaydi. Bu tanlov terminalning xizmatlari orasida körinmaydi.
 
 Administrator → **Muammoli murojaatlar**: Kutilmoqda / Hal qilindi / Hal qilinmadi. Yakunlaşda natija izohi majburiy; yuborgan operator, oyna, bölim, çipta va sanalar saqlanadi. Xodim faqat öz murojaatlari natijasini köradi. Hal qilingan xizmat uni yakunlagan administratorga yoziladi, hal qilinmagan xizmat yakunlangan deb sanalmaydi. Hisobotlar yuborilgan sana kesimidagi batafsil murojaatlar jadvali va uch holat jamisini ham beradi. [Batafsil yöriqnoma](EXE_BOSHLASH.md).
+
+## Yangilanish: LEDni EXE ichidan qölda yoqiş
+
+**COM/IP uchun umumiy blok yo‘q.** Administrator → Elektron tablolar → Qo‘lda port va protokol sozlamalari. Port parametrlarini va raqam/tozalaş HEX shablonlarini kiritib, Faol → Saqlaş. Töliq manual profil bilan operator chaqiruvi avtomatik yuboriladi; JSON zaxira/import ham mavjud. Eski «faqat sinov» matnlari oldingi bosqiçga tegishli. Model/protokol avtomatik topilmaydi, qurilma paketlari avvaldan taxminan to‘ldirilmaydi. [Qo‘lda sozlash yo‘riqnomasi](LED_QOLDA_SOZLASH.md).
