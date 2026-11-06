@@ -37,6 +37,10 @@ class Displays(unittest.TestCase):
         with app.connect() as c:
             self.assertEqual(c.execute('SELECT status FROM tickets WHERE id=?',(ticket['id'],)).fetchone()[0],'called')
             self.assertEqual(c.execute('SELECT count(*) FROM calls').fetchone()[0],1)
+    def test_invalid_device_identifier_is_rejected(self):
+        with app.connect() as c:
+            for identifier in [None,True,0,{},[], '1']:
+                with self.assertRaises(ValueError):display_adapter.command(c,dict(device=identifier,operation='show',value='A025'))
     def test_manual_test_has_no_ticket_and_settings_survive_restart(self):
         with app.connect() as c:
             device=c.execute('SELECT id FROM display_devices WHERE window=2').fetchone()[0]

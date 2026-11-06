@@ -74,6 +74,7 @@ def enqueue_event(c,event,window,operation,label):
     except Exception:LOG.exception('LED outbox yozilmadi; operator va TV davom etadi')
 
 def command(c,body):
+    if type(body.get('device')) is not int or body['device']<=0:raise ValueError('Qurilma ID raqami noto‘g‘ri')
     device=c.execute('SELECT * FROM display_devices WHERE id=? AND enabled=1',(body.get('device'),)).fetchone()
     if not device:raise ValueError('Faol tablo topilmadi')
     if device['transport']!='mock':raise ValueError(UNVERIFIED)
