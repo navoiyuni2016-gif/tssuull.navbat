@@ -55,7 +55,7 @@ class FrozenWindows(unittest.TestCase):
                     with opener.open(request,timeout=5) as response:return json.load(response)
                 post('login',{'name':'admin','password':'frozen-server-test-password-123'})
                 post('displays',{'window':1,'device_address':'1','transport':'mock','endpoint':'','enabled':True})
-                post('action',{'action':'next'})
+                active=post('action',{'action':'next'})
                 for _ in range(30):
                     with opener.open('http://127.0.0.1:8080/api/displays',timeout=5) as response:display=json.load(response)
                     if display['jobs'] and display['jobs'][0]['status']=='simulated':break
@@ -65,6 +65,15 @@ class FrozenWindows(unittest.TestCase):
                 self.assertEqual(display['jobs'][0]['status'],'simulated')
                 with opener.open('http://127.0.0.1:8080/api/reports',timeout=5) as response:report=json.load(response)
                 self.assertIn('average_wait_minutes',report);self.assertEqual(report['served'],0)
+                post('action',{'action':'refer_admin','ticket':active['id'],'comment':'Frozen private referral comment'})
+                with opener.open('http://127.0.0.1:8080/api/referrals',timeout=5) as response:case=json.load(response)['referrals'][0]
+                self.assertEqual(case['status'],'pending')
+                post('referrals/resolve',{'id':case['id'],'status':'unresolved','comment':'Frozen administrator outcome'})
+                with opener.open('http://127.0.0.1:8080/api/reports',timeout=5) as response:report=json.load(response)
+                self.assertEqual(report['referrals']['unresolved'],1);self.assertEqual(report['served'],0)
+                for fmt in ('xlsx','docx','pdf'):
+                    with opener.open('http://127.0.0.1:8080/api/reports/export?format='+fmt,timeout=20) as response:self.assertGreater(len(response.read()),1000)
+
 
             finally:
                 if server.poll() is None:server.terminate()

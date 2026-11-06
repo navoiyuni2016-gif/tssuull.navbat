@@ -63,6 +63,8 @@ def migrate(c):
  if university:c.execute("UPDATE settings SET value=? WHERE key='university'",(json.dumps(alphabet.text(json.loads(university[0])),ensure_ascii=False),))
  import display_adapter
  display_adapter.migrate(c)
+ import referrals
+ referrals.migrate(c)
  c.execute('PRAGMA user_version=3')
 
 def unused_prefix(used):
@@ -140,6 +142,8 @@ def report(c,start,end):
   if duration is not None:durations.append(duration)
   for key,state in [('done','done'),('absent','absent'),('waiting','waiting')]:result[key]+=row['status']==state
  def average(items):return round(sum(items)/len(items),1) if items else None
+ import referrals
+ result['referrals']=referrals.report(c,start,end)
  result['average_wait_seconds']=average(waits);result['average_service_seconds']=average(durations)
  result['average_wait_minutes']=average([v/60 for v in waits]);result['average_service_minutes']=average([v/60 for v in durations]);result['served']=result['done']
  for group in (result['services'],result['employees']):

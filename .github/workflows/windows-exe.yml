@@ -12,6 +12,8 @@ on:
       - 'native_smoke.py'
       - 'printer_adapter.py'
       - 'display_adapter.py'
+      - 'referrals.py'
+      - 'tests/test_referrals.py'
       - 'report_exports.py'
       - 'report_pdf.py'
       - 'tests/test_displays.py'

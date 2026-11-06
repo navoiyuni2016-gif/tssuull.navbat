@@ -148,9 +148,11 @@ class HTTP(unittest.TestCase):
                     self.assertIn('attachment',response.headers['Content-Disposition']);payload=response.read();self.assertTrue(payload.startswith(b'%PDF') if fmt=='pdf' else payload.startswith(b'PK'))
             request('/api/logout',{})
             request('/api/login',{'name':'worker','password':'worker-password-123'})
-            for endpoint,body in [('/api/audio/upload',upload),('/api/settings',{'prefix':'B'}),('/api/displays',{}),('/api/displays/command',{})]:
+            for endpoint,body in [('/api/audio/upload',upload),('/api/settings',{'prefix':'B'}),('/api/displays',{}),('/api/displays/command',{}),('/api/referrals/resolve',{})]:
                 with self.assertRaises(urllib.error.HTTPError) as e:request(endpoint,body)
                 self.assertEqual(e.exception.code,403)
+            with self.assertRaises(urllib.error.HTTPError) as private:request('/api/referrals')
+            self.assertEqual(private.exception.code,403)
             with self.assertRaises(urllib.error.HTTPError) as denied:request('/api/displays')
             self.assertEqual(denied.exception.code,403)
         finally:server.shutdown();server.server_close()

@@ -49,3 +49,13 @@ Yozib olingan ovoz rejimida yangi B, C, D, E harflari uçun ham ovoz fayllarini 
 Hisobot kutiş/xizmat vaqtlarini minutda, har bir bölim va xodimning yakunlangan xizmatlar jamisini körsatadi. XLSX/DOCX/PDFda oq fondagi qora katakçali jadvallar bor; 0 natijali bölim/xodimlar ham çiqadi. Sana oralig‘i avvalgidek çipta yaratilgan kunga tegishli.
 
 Administrator → **Elektron tablolar**: oyna, ID, ulaniş manzili va apparatsiz sinov. **Hozir faqat simulyator işlaydi**; u heç bir portga yozmaydi. COM/IP/agent sozlamasini saqlaş mumkin, lekin haqiqiy LED protokoli tasdiqlanmaganligi uçun yuboriş bloklanadi. `simulated` — apparatsiz sinov, jismoniy tablo emas. [Texnik dalillar va keyingi bosqiç](LED_TEXNIK_TAHLIL.md).
+
+## Operator → administratorga muammoli murojaat
+
+1. Xodim oynasida joriy çipta çaqirilgan yoki xizmatda bölsin. **Boşqa xizmatga yönaltiriş → Administrator — muammoli murojaat**ni tanlang.
+2. **Muammo izohi** majburiy (1–1000 belgi). Yönaltirişni bosing. Yangi çipta yoki bosma yaratilmaydi; çipta admin kutişiga ötadi, operator oynasi böşaydi. Terminaldagi beshta xizmat özgarmaydi.
+3. F10 → administrator → **Muammoli murojaatlar**. Administrator barcha xodimlarning yuborganlarini köradi. **Hal qilindi** yoki **Hal qilinmadi**ni tanlab, majburiy natija izohi bilan saqlaydi. Kutilayotgan, hal qilingan, hal qilinmagan va barcha murojaatlarni filtrlash mumkin.
+4. Xodim öz yuborgan murojaatlari natijasini panelida köradi. Boshqa xodimning izohi unga berilmaydi; terminal/TVga muammo matni uzatilmaydi.
+5. Hisobotlarda 3 ta alohida jami va batafsil jadval bor; Excelda to‘rtinçi varaq, Word/PDFda qo‘şimça jadval. Murojaat sanasi — **yuborilgan sana**, holati esa hisobot oliniş paytidagi joriy natija. Oddiy navbat statistikasi avvalgidek çipta yaratilgan kun böyiça.
+
+**Hisoblaş:** hal qilingan çipta yakunlangan xizmat bölib, uni yakunlagan administratorga yoziladi; yönaltirgan xodim va bölim murojaat yozuvida alohida saqlanadi. Hal qilinmagan yoki kutayotgan murojaat yakunlangan xizmat deb sanalmaydi. Bir xil sörov takrori ikkinçi murojaat/natija yaratmaydi. Yakuniy natija ustidan yozilmaydi; yuboriş va yakunlaş tarixi bazada saqlanadi. Hali iş tugamagan bölsa, murojaatni kutilmoqda holatida qoldiring.

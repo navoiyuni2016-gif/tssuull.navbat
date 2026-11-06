@@ -33,6 +33,11 @@ function updateBrand(){
  document.querySelector('#brand-subtitle').textContent=state.university;
 }
 
+const referralDrafts=new Map();
+const referralStatus={pending:'Kutilmoqda',resolved:'Hal qilindi',unresolved:'Hal qilinmadi'};
+const referralTime=value=>value?new Date(value).toLocaleString('en-GB',{timeZone:'Asia/Tashkent'}):'—';
+const referralColumns=['Chipta','Bo‘lim','Yo‘naltirgan xodim / oyna','Muammo izohi','Yuborilgan vaqt','Holat','Natija izohi','Admin','Yakun vaqti'];
+function referralTable(parent,rows){const table=el('table',undefined,parent);table.className='referral-table';const head=el('tr',undefined,el('thead',undefined,table));referralColumns.forEach(label=>el('th',label,head));const body=el('tbody',undefined,table);for(const r of rows){const row=el('tr',undefined,body);[r.label,r.service_name,r.operator+' / '+r.window+'-oyna',r.comment,referralTime(r.created),referralStatus[r.status],r.resolution||'—',r.resolved_by||'—',referralTime(r.resolved_at)].forEach(value=>el('td',value,row).className='technical')}if(!rows.length){const cell=el('td','Muammoli murojaatlar yo‘q',el('tr',undefined,body));cell.colSpan=9}return table}
 const statusNames={waiting:'Kutilmoqda',called:'Chaqirildi',serving:'Xizmat ko‘rsatilmoqda',done:'Yakunlandi',absent:'Kelmadi'};
 function el(tag,text,parent=main){const e=document.createElement(tag);if(text!==undefined)e.textContent=text;parent.append(e);return e}
 function button(text,fn,parent=main){const b=el('button',text,parent);b.type='button';b.onclick=async()=>{b.disabled=true;try{await fn()}catch(e){alert(e.message)}finally{b.disabled=false}};return b}
@@ -78,7 +83,7 @@ function decorateFile(input){
   input.resetLabel=()=>{name.classList.remove('technical');name.textContent='Fayl tanlanmagan';};
 }
 
-function choice(form,text,items,value){const label=el('label',text,form);const s=el('select',undefined,label);for(const [key,name] of items){const option=el('option',name,s);option.value=key;option.selected=String(key)===String(value)}return s}
+function choice(form,text,items,value){const label=el('label',text,form);const s=el('select',undefined,label);s.setAttribute('aria-label',text);for(const [key,name] of items){const option=el('option',name,s);option.value=key;option.selected=String(key)===String(value)}return s}
 function submitForm(form,handler){const out=el('p','',form);out.setAttribute('role','status');const b=el('button','Saqlash',form);b.type='submit';form.onsubmit=async e=>{e.preventDefault();b.disabled=true;try{out.textContent='Saqlanmoqda…';await handler();out.textContent='Saqlandi'}catch(e){out.textContent=e.message}finally{b.disabled=false}}}
 function newRequest(){return Array.from(crypto.getRandomValues(new Uint8Array(24)),x=>x.toString(16).padStart(2,'0')).join('')}
 function remember(value){try{if(value)sessionStorage.setItem('navbat-pending',JSON.stringify(value));else sessionStorage.removeItem('navbat-pending')}catch{}}
@@ -169,8 +174,11 @@ async function staffData(data){
     const b=button(label,async()=>{await api('action',{action:op,ticket:active?.id,service:op==='next'&&operatorDepartment?Number(operatorDepartment):undefined});await staffData(await api('work'))},actions);b.disabled=!enabled;b.className='action-'+op;b.prepend(icon(op));
   }
   if(active){const transfer=el('div',undefined,current);transfer.className='transfer-box';
-    const destination=choice(transfer,'Boshqa xizmatga yo‘naltirish',state.services.map(s=>[s.id,s.name]),active.service);
-    const send=button('Yo‘naltirish',async()=>{await api('action',{action:'transfer',ticket:active.id,service:Number(destination.value)});await staffData(await api('work'))},transfer);send.className='secondary';send.prepend(icon('arrow'));
+    const draft=referralDrafts.get(active.id)||{destination:active.service,comment:''};referralDrafts.set(active.id,draft);
+    const destination=choice(transfer,'Boshqa xizmatga yo‘naltirish',[...state.services.map(s=>[s.id,s.name]),['admin','Administrator — muammoli murojaat']],draft.destination);
+    const noteLabel=el('label','Muammo izohi (majburiy)',transfer);const comment=el('textarea',undefined,noteLabel);comment.rows=4;comment.maxLength=1000;comment.value=draft.comment;comment.className='technical';comment.oninput=()=>{draft.comment=comment.value};
+    const update=()=>{draft.destination=destination.value;noteLabel.hidden=destination.value!=='admin';comment.required=!noteLabel.hidden};destination.onchange=update;update();
+    const send=button('Yo‘naltirish',async()=>{const admin=destination.value==='admin';if(admin&&!comment.value.trim())throw Error('Muammo izohini yozing');await api('action',{action:admin?'refer_admin':'transfer',ticket:active.id,service:admin?undefined:Number(destination.value),comment:admin?comment.value:undefined});referralDrafts.delete(active.id);await staffData(await api('work'))},transfer);send.className='secondary';send.prepend(icon('arrow'));
   }
   const queue=el('section',undefined,holder);queue.className='card waiting-card';
   const title=el('div',undefined,queue);title.className='queue-title';el('h3','Kutayotganlar',title);el('span',String(waiting.length),title).className='count-badge';
@@ -178,12 +186,13 @@ async function staffData(data){
   const body=el('tbody',undefined,table);for(const t of waiting){const row=el('tr',undefined,body);el('td',t.label||number(t.number),row).className='queue-number';el('td',state.services.find(s=>s.id===t.service)?.name||t.service,row);el('span',statusNames[t.status],el('td',undefined,row)).className='status-badge waiting';const call=button('Chaqirish',async()=>{await api('action',{action:'next',ticket:t.id});await staffData(await api('work'))},el('td',undefined,row));call.className='queue-call';call.disabled=!!active;}
   if(data.active_windows?.length){const other=el('div',undefined,queue);other.className='other-operators';el('h3','Boshqa oynalardagi chiptalar',other);for(const t of data.active_windows)el('span',t.window+'-oyna · '+t.label+' · '+(state.services.find(s=>s.id===t.service)?.name||''),other);}
   if(!waiting.length){const cell=el('td','Kutayotgan chiptalar yo‘q',el('tr',undefined,body));cell.colSpan=4;cell.className='empty-state';}
+  if(data.referrals?.length){const history=el('section',undefined,queue);history.className='report-table';el('h3','Administratorga yuborilgan murojaatlar',history);referralTable(history,data.referrals);}
 }
 
 async function admin(){
   let data;try{data=await api('admin')}catch{login();return}
   heading('Administrator paneli');const menu=el('div');menu.className='admin-tabs';const panel=el('section');panel.id='admin-panel';
-  for(const [key,label] of [['audio','Ovozlar'],['settings','Sozlamalar'],['services','Xizmatlar'],['windows','Oynalar'],['displays','Elektron tablolar'],['users','Xodimlar'],['reports','Hisobotlar']]){const tab=button(label,async()=>{menu.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));tab.classList.add('active');panel.replaceChildren();data=await api('admin');await adminSection(key,data,panel);},menu);tab.className='tab'+(key==='audio'?' active':'');tab.prepend(icon(key));}
+  for(const [key,label] of [['audio','Ovozlar'],['settings','Sozlamalar'],['services','Xizmatlar'],['windows','Oynalar'],['displays','Elektron tablolar'],['users','Xodimlar'],['referrals','Muammoli murojaatlar'],['reports','Hisobotlar']]){const tab=button(label,async()=>{menu.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));tab.classList.add('active');panel.replaceChildren();data=await api('admin');await adminSection(key,data,panel);},menu);tab.className='tab'+(key==='audio'?' active':'');tab.prepend(icon(key));}
   const exit=button('Chiqish',async()=>{await api('logout',{});login()},menu);exit.className='ghost admin-exit';exit.prepend(icon('logout'));
   await audioAdmin(panel);
 }
@@ -278,6 +287,24 @@ async function adminSection(key,data,panel){
     for(const j of d.jobs)el('p','#'+j.id+' · '+j.operation+' · '+j.value+' · '+j.status+(j.error?' — '+j.error:''),log).className='technical';
     button('Holatni yangilash',reload,panel);
   }
+  if(key==='referrals'){
+    el('h2','Muammoli murojaatlar',panel);
+    const filter=choice(panel,'Murojaat holati',[['pending','Kutilmoqda'],['resolved','Hal qilindi'],['unresolved','Hal qilinmadi'],['','Barchasi']],'pending');
+    const content=el('section',undefined,panel);
+    async function render(){
+      const rows=(await api('referrals'+(filter.value?'?status='+filter.value:''))).referrals;content.replaceChildren();
+      const summary=el('section',undefined,content);summary.className='card report-table';referralTable(summary,rows);
+      for(const r of rows.filter(r=>r.status==='pending')){
+        const f=el('form',undefined,content);f.className='card referral-form';el('h3',r.label+' — '+r.service_name,f);
+        el('p','Yo‘naltirgan: '+r.operator+' / '+r.window+'-oyna · '+referralTime(r.created),f).className='technical';
+        el('p',r.comment,f).className='technical referral-note';
+        const status=choice(f,'Muammo natijasi',[['resolved','Hal qilindi'],['unresolved','Hal qilinmadi']],'resolved');
+        const label=el('label','Natija izohi (majburiy)',f);const note=el('textarea',undefined,label);note.rows=4;note.maxLength=1000;note.required=true;note.className='technical';
+        submitForm(f,async()=>{await api('referrals/resolve',{id:r.id,status:status.value,comment:note.value});await render()});
+      }
+    }
+    filter.onchange=render;button('Yangilash',render,panel);await render();
+  }
   if(key==='reports'){
     el('h2','Hisobotlar',panel);const f=el('form',undefined,panel);f.className='report-filters';
     const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));const today=parts.year+'-'+parts.month+'-'+parts.day;
@@ -291,12 +318,13 @@ async function adminSection(key,data,panel){
     const show=async()=>{
       const r=await api('reports?start='+start.value+'&end='+end.value);result.replaceChildren();
       const kpis=el('div',undefined,result);kpis.className='report-kpis';
-      for(const [label,value] of [['Chiqarilgan chiptalar',r.issued],['Jami xizmat ko‘rsatilgan',r.served],['Kelmaganlar',r.absent],['Hozir kutayotganlar',r.waiting],['O‘rtacha kutish (minut)',r.average_wait_minutes??'—'],['O‘rtacha xizmat (minut)',r.average_service_minutes??'—']]){const card=el('div',undefined,kpis);el('span',label,card);el('strong',String(value),card);}
+      for(const [label,value] of [['Chiqarilgan chiptalar',r.issued],['Jami xizmat ko‘rsatilgan',r.served],['Kelmaganlar',r.absent],['Hozir kutayotganlar',r.waiting],['O‘rtacha kutish (minut)',r.average_wait_minutes??'—'],['O‘rtacha xizmat (minut)',r.average_service_minutes??'—'],['Muammolar — kutilmoqda',r.referrals.pending],['Muammolar — hal qilindi',r.referrals.resolved],['Muammolar — hal qilinmadi',r.referrals.unresolved]]){const card=el('div',undefined,kpis);el('span',label,card);el('strong',String(value),card);}
       for(const [group,label] of [['services','Bo‘limlar kesimida'],['employees','Operatorlar kesimida']]){
         const card=el('section',undefined,result);card.className='card report-table';el('h3',label,card);const table=el('table',undefined,card);const head=el('tr',undefined,el('thead',undefined,table));['Nomi','Chiqarilgan','Jami xizmat ko‘rsatilgan','Kelmagan','O‘rt. kutish (min)','O‘rt. xizmat (min)'].forEach(t=>el('th',t,head));const body=el('tbody',undefined,table);
         for(const [key,b] of Object.entries(r[group])){const row=el('tr',undefined,body);const name=group==='services'?data.services.find(s=>s.id===Number(key))?.name||key:key==='unassigned'?'Biriktirilmagan':key;[name,b.issued,b.done,b.absent,b.average_wait_minutes??'—',b.average_service_minutes??'—'].forEach((v,i)=>{const td=el('td',String(v),row);if(i===0&&group==='employees')td.className='technical'});}
         if(!Object.keys(r[group]).length){const cell=el('td','Bu davr uchun ma’lumot yo‘q',el('tr',undefined,body));cell.colSpan=6;}
       }
+      const problems=el('section',undefined,result);problems.className='card report-table';el('h3','Muammoli murojaatlar',problems);el('p','Yuborilgan sana bo‘yicha; joriy hal qilish holati va administrator izohi.',problems);referralTable(problems,r.referrals.rows);
       links.forEach(a=>{a.href='/api/reports/export?format='+a.dataset.format+'&start='+encodeURIComponent(start.value)+'&end='+encodeURIComponent(end.value);a.setAttribute('aria-disabled','false');});
       hint.textContent='Davr: '+start.value+' — '+end.value+'. Kutish va xizmat vaqti minutda. Jami xizmat — yakunlangan chiptalar. Barcha formatlarda bir xil ma’lumot yuklanadi.';
     };
@@ -366,7 +394,7 @@ async function refresh(){
   try{state=await api('state');updateBrand();document.body.dataset.connection='online';document.querySelector('#connection').textContent='● Ulangan';
     if(isTV()){audioFiles=(await api('audio')).files;recorded.configure(audioFiles,audioPrefixes());const newest=Math.max(0,...state.calls.map(c=>c.id));if(callCursor!==null&&newest<callCursor){callCursor=newest;recorded.lastId=newest;announcer.seen.clear();tvFlasher.lastId=newest;tvFlasher.pending=[];}await pollCalls();tv();await autoStartTVAudio()}
     if(!started){started=true;await route()}
-    if(location.pathname==='/staff'&&document.querySelector('#staff-data')&&!document.activeElement?.matches('select,button'))try{await staffData(await api('work'))}catch{login()}
+    if(location.pathname==='/staff'&&document.querySelector('#staff-data')&&!document.activeElement?.matches('input,textarea,select,button'))try{await staffData(await api('work'))}catch{login()}
     return true;
   }catch{document.body.dataset.connection='offline';document.querySelector('#connection').textContent='● Aloqa uzildi. Qayta ulanmoqda…';return false}
 }

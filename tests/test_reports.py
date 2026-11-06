@@ -27,9 +27,9 @@ class Reports(unittest.TestCase):
         root=ET.fromstring(archive.read('xl/worksheets/sheet1.xml'));cells={c.attrib['r']:c for c in root.findall('.//s:c',ns)}
         self.assertEqual(cells['E7'].find('s:v',ns).text,'1');self.assertEqual(cells['E11'].find('s:v',ns).text,'2.0')
         group=ET.fromstring(archive.read('xl/worksheets/sheet2.xml'));cell=next(c for c in group.findall('.//s:c',ns) if c.attrib['r']=='A8');self.assertEqual(cell.attrib['t'],'inlineStr');self.assertIsNone(cell.find('s:f',ns));self.assertIn('xl/media/logo.png',archive.namelist())
-    def test_docx_has_three_tables_full_names_and_logo(self):
+    def test_docx_has_four_tables_full_names_and_logo(self):
         archive=self.office('docx');root=ET.fromstring(archive.read('word/document.xml'));ns={'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
-        self.assertEqual(len(root.findall('.//w:tbl',ns)),3);text=' '.join(t.text or '' for t in root.findall('.//w:t',ns));self.assertIn('2.0',text);self.assertIn('Operatorlar kesimida',text);self.assertIn('word/media/logo.png',archive.namelist())
+        self.assertEqual(len(root.findall('.//w:tbl',ns)),4);text=' '.join(t.text or '' for t in root.findall('.//w:t',ns));self.assertIn('2.0',text);self.assertIn('Operatorlar kesimida',text);self.assertIn('word/media/logo.png',archive.namelist())
     def test_minutes_served_totals_and_zero_activity_rows(self):
         import management
         with app.connect() as c:

@@ -6,12 +6,13 @@ import zipfile
 from xml.sax.saxutils import escape
 import alphabet
 import management
+import referrals
 from report_pdf import PDF
 
 ROOT=Path(__file__).parent
 APP='TOŞDÖTAU — elektron navbat tizimi'
 HEADERS=['Bölim / operator','Çiqarilgan','Jami xizmat körsatilgan','Kelmagan','Ört. kutiş (min)','Ört. xizmat (min)']
-RULES='Kutiş: yaratilgandan oxirgi xizmat çaqiruvigaça. Xizmat: oxirgi bosqişda boşlaşdan yakunlaşgaça. Örtaça vaqtlar minutda; jami xizmat körsatilgan — faqat yakunlangan çiptalar; maʼlumot bölmasa —. Yönaltirilgan çipta bir marta sanaladi.'
+RULES='Kutiş: yaratilgandan oxirgi xizmat çaqiruvigaça. Xizmat: oxirgi bosqişda boşlaşdan yakunlaşgaça. Örtaça vaqtlar minutda; jami xizmat körsatilgan — faqat yakunlangan çiptalar; maʼlumot bölmasa —. Yönaltirilgan çipta bir marta sanaladi. Muammoli murojaatlar yuborilgan sana böyiça; hal qilingan xizmat yakunlagan administratorga yoziladi.'
 BLUE='000000';GREEN='000000';LIGHT='FFFFFF'
 
 def clean(value):
@@ -31,11 +32,16 @@ def snapshot(c,start,end,*,sample=False):
             rows.append([label,bucket['issued'],bucket['done'],bucket['absent'],bucket['average_wait_minutes'],bucket['average_service_minutes']])
         groups.append((title,rows))
     summary=[('Çiqarilgan çiptalar',report['issued']),('Jami xizmat körsatilgan',report['served']),('Kelmaganlar',report['absent']),('Hozir kutayotganlar',report['waiting']),('Örtaça kutiş (minut)',report['average_wait_minutes']),('Örtaça xizmat (minut)',report['average_service_minutes'])]
+    cases=report['referrals']
+    summary.extend([('Muammoli murojaatlar — kutilmoqda',cases['pending']),('Muammoli murojaatlar — hal qilindi',cases['resolved']),('Muammoli murojaatlar — hal qilinmadi',cases['unresolved'])])
     logo_row=c.execute('SELECT content,mime FROM branding WHERE id=1').fetchone()
     logo=bytes(logo_row['content']) if logo_row and logo_row['mime']=='image/png' else None
     default=ROOT/'web'/'assets'/'university-logo.png'
     if logo is None and default.is_file():logo=default.read_bytes()
-    return dict(university=settings['university'],start=start,end=end,generated=dt.datetime.now(dt.timezone(dt.timedelta(hours=5))).strftime('%d.%m.%Y %H:%M'),summary=summary,groups=groups,logo=logo,sample=sample)
+    return dict(university=settings['university'],start=start,end=end,generated=dt.datetime.now(dt.timezone(dt.timedelta(hours=5))).strftime('%d.%m.%Y %H:%M'),summary=summary,groups=groups,issues=referrals.export_rows(cases['rows']),logo=logo,sample=sample)
+
+def detail_tables(data):
+    return [(title,rows,HEADERS,[302,65,75,70,125,125]) for title,rows in data['groups']]+[('Muammoli murojaatlar',data.get('issues',[]),referrals.HEADERS,referrals.WIDTHS)]
 
 def zip_bytes(files):
     out=io.BytesIO()
@@ -48,9 +54,11 @@ def xlsx(data):
     files={};ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main';relations='http://schemas.openxmlformats.org/officeDocument/2006/relationships'
     styles='''<styleSheet xmlns="%s"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/><color rgb="FF000000"/></font><font><sz val="19"/><name val="Calibri"/><b/><color rgb="FF000000"/></font><font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF000000"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/></patternFill></fill></fills><borders count="2"><border/><border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="2" fillId="2" borderId="1" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="1" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" horizontal="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" horizontal="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'''%ns
     files['xl/styles.xml']=styles
-    sheets=[('Umumiy',None),('Bölimlar',data['groups'][0][1]),('Operatorlar',data['groups'][1][1])]
+    sheets=[('Umumiy',None,None),('Bölimlar',data['groups'][0][1],HEADERS),('Operatorlar',data['groups'][1][1],HEADERS),('Muammoli murojaatlar',data.get('issues',[]),referrals.HEADERS)]
     sheet_xml=[];book_rels=[];overrides=[];defined=[]
-    for index,(name,rows) in enumerate(sheets,1):
+    for index,(name,rows,headers) in enumerate(sheets,1):
+        issue_sheet=index==4;last='I' if issue_sheet else 'F'
+        widths=[14,36,23,55,22,22,55,20,22] if issue_sheet else [61,18,18,18,18,18]
         cells={};merges=['A1:E2','A3:E3','A4:E4'];heights={1:26,2:22,3:25,4:25,6:30}
         def cell(r,col,value,style=0):
             ref=chr(65+col)+str(r)
@@ -58,28 +66,29 @@ def xlsx(data):
             else:value_xml='<is><t xml:space="preserve">'+x(number(value))+'</t></is>';typ=' t="inlineStr"'
             cells.setdefault(r,[]).append(f'<c r="{ref}" s="{style}"{typ}>{value_xml}</c>')
         cell(1,0,data['university'],1);cell(3,0,APP);cell(4,0,f"Davr: {data['start']} — {data['end']} | Tayyorlandi: {data['generated']} (UTC+5)")
-        cell(6,0,('NAMUNA — SINOV MAʼLUMOTLARI | ' if data['sample'] else '')+name,2);merges.append('A6:F6')
+        cell(6,0,('NAMUNA — SINOV MAʼLUMOTLARI | ' if data['sample'] else '')+name,2);merges.append(f'A6:{last}6')
         if rows is None:
             for r,(label,value) in enumerate(data['summary'],7):
-                cell(r,0,label,3);cell(r,4,value,5 if r>=11 else 4);merges.extend([f'A{r}:D{r}',f'E{r}:F{r}']);heights[r]=29
-            cell(15,0,RULES);merges.append('A15:F17');heights[15]=50;end=17
+                cell(r,0,label,3);cell(r,4,value,5 if isinstance(value,float) else 4);merges.extend([f'A{r}:D{r}',f'E{r}:F{r}']);heights[r]=29
+            rule_row=9+len(data['summary']);cell(rule_row,0,RULES);merges.append(f'A{rule_row}:F{rule_row+2}');heights[rule_row]=50;end=rule_row+2
         else:
-            for col,label in enumerate(HEADERS):cell(7,col,label,2)
-            heights[7]=37
+            for col,label in enumerate(headers):cell(7,col,label,2)
+            heights[7]=50 if issue_sheet else 37
             for r,row in enumerate(rows,8):
-                for col,value in enumerate(row):cell(r,col,value,0 if col==0 else 5 if col>=4 else 4)
-                heights[r]=max(28,16*((len(str(row[0]))//55)+1))
+                for col,value in enumerate(row):cell(r,col,value,0 if issue_sheet or col==0 else 5 if col>=4 else 4)
+                heights[r]=max(28,max(16*sum(max(1,(len(line)+widths[col]-1)//widths[col]) for line in str(value).split('\n')) for col,value in enumerate(row)))
             end=max(8,len(rows)+7)
-            if not rows:cell(8,0,'Bu davr uçun maʼlumot yo‘q');merges.append('A8:F8')
+            if not rows:cell(8,0,'Bu davr uçun maʼlumot yo‘q');merges.append(f'A8:{last}8')
         drawing=''
         if data['logo']:
             files[f'xl/worksheets/_rels/sheet{index}.xml.rels']=f'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="logo" Type="{relations}/drawing" Target="../drawings/drawing{index}.xml"/></Relationships>'
             files[f'xl/drawings/drawing{index}.xml']='''<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="%s"><xdr:oneCellAnchor><xdr:from><xdr:col>5</xdr:col><xdr:colOff>95250</xdr:colOff><xdr:row>0</xdr:row><xdr:rowOff>47625</xdr:rowOff></xdr:from><xdr:ext cx="857250" cy="857250"/><xdr:pic><xdr:nvPicPr><xdr:cNvPr id="1" name="Universitet logotipi"/><xdr:cNvPicPr/></xdr:nvPicPr><xdr:blipFill><a:blip r:embed="image"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill><xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr></xdr:pic><xdr:clientData/></xdr:oneCellAnchor></xdr:wsDr>'''%relations
             files[f'xl/drawings/_rels/drawing{index}.xml.rels']=f'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="image" Type="{relations}/image" Target="../media/logo.png"/></Relationships>'
             overrides.append(f'<Override PartName="/xl/drawings/drawing{index}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>');drawing='<drawing r:id="logo"/>'
+        cols=''.join(f'<col min="{i}" max="{i}" width="{width}" customWidth="1"/>' for i,width in enumerate(widths,1))
         body=''.join(f'<row r="{r}" ht="{heights.get(r,26)}" customHeight="1">'+''.join(cells[r])+'</row>' for r in sorted(cells))
-        files[f'xl/worksheets/sheet{index}.xml']=f'<worksheet xmlns="{ns}" xmlns:r="{relations}"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0"><pane ySplit="7" topLeftCell="A8" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="61" customWidth="1"/><col min="2" max="6" width="18" customWidth="1"/></cols><sheetData>{body}</sheetData>'+('' if rows is None else f'<autoFilter ref="A7:F{end}"/>')+'<mergeCells>'+''.join(f'<mergeCell ref="{m}"/>' for m in merges)+'</mergeCells><pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/><headerFooter><oddFooter>&amp;LTOŞDÖTAU&amp;R&amp;P / &amp;N</oddFooter></headerFooter>'+drawing+'</worksheet>'
-        sheet_xml.append(f'<sheet name="{name}" sheetId="{index}" r:id="s{index}"/>');book_rels.append(f'<Relationship Id="s{index}" Type="{relations}/worksheet" Target="worksheets/sheet{index}.xml"/>');overrides.append(f'<Override PartName="/xl/worksheets/sheet{index}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>');defined.append(f'<definedName name="_xlnm.Print_Area" localSheetId="{index-1}">\'{name}\'!$A$1:$F${end}</definedName>')
+        files[f'xl/worksheets/sheet{index}.xml']=f'<worksheet xmlns="{ns}" xmlns:r="{relations}"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0"><pane ySplit="7" topLeftCell="A8" state="frozen"/></sheetView></sheetViews><cols>{cols}</cols><sheetData>{body}</sheetData>'+('' if rows is None else f'<autoFilter ref="A7:{last}{end}"/>')+'<mergeCells>'+''.join(f'<mergeCell ref="{m}"/>' for m in merges)+'</mergeCells><pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/><headerFooter><oddFooter>&amp;LTOŞDÖTAU&amp;R&amp;P / &amp;N</oddFooter></headerFooter>'+drawing+'</worksheet>'
+        sheet_xml.append(f'<sheet name="{name}" sheetId="{index}" r:id="s{index}"/>');book_rels.append(f'<Relationship Id="s{index}" Type="{relations}/worksheet" Target="worksheets/sheet{index}.xml"/>');overrides.append(f'<Override PartName="/xl/worksheets/sheet{index}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>');defined.append(f'<definedName name="_xlnm.Print_Area" localSheetId="{index-1}">\'{name}\'!$A$1:${last}${end}</definedName>')
     if data['logo']:files['xl/media/logo.png']=data['logo']
     files['xl/workbook.xml']=f'<workbook xmlns="{ns}" xmlns:r="{relations}"><sheets>'+''.join(sheet_xml)+'</sheets><definedNames>'+''.join(defined)+'</definedNames></workbook>'
     files['xl/_rels/workbook.xml.rels']='<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+''.join(book_rels)+f'<Relationship Id="styles" Type="{relations}/styles" Target="styles.xml"/></Relationships>'
@@ -91,10 +100,10 @@ def xlsx(data):
 def docx(data):
     w='http://schemas.openxmlformats.org/wordprocessingml/2006/main';r='http://schemas.openxmlformats.org/officeDocument/2006/relationships'
     def paragraph(text,size=22,bold=False,color=BLUE):return f'<w:p><w:pPr><w:spacing w:after="120"/><w:keepNext/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="{size}"/><w:color w:val="{color}"/>'+('<w:b/>' if bold else '')+'</w:rPr><w:t xml:space="preserve">'+x(text)+'</w:t></w:r></w:p>'
-    def table(rows,widths,header=True):
+    def table(rows,widths,header=True,allow_split=False):
         out='<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="000000"/><w:left w:val="single" w:sz="4" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:color="000000"/><w:right w:val="single" w:sz="4" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:color="000000"/></w:tblBorders><w:tblCellMar><w:top w:w="90" w:type="dxa"/><w:bottom w:w="90" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>'+''.join(f'<w:gridCol w:w="{n}"/>' for n in widths)+'</w:tblGrid>'
         for i,row in enumerate(rows):
-            out+='<w:tr><w:trPr><w:cantSplit/>'+('<w:tblHeader/>' if header and i==0 else '')+'</w:trPr>'
+            out+='<w:tr><w:trPr>'+('' if allow_split else '<w:cantSplit/>')+('<w:tblHeader/>' if header and i==0 else '')+'</w:trPr>'
             for col,value in enumerate(row):
                 background='FFFFFF'
                 out+=f'<w:tc><w:tcPr><w:tcW w:w="{widths[col]}" w:type="dxa"/><w:shd w:fill="{background}"/></w:tcPr><w:p><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="19"/><w:color w:val="'+BLUE+'"/>'+('<w:b/>' if header and i==0 else '')+'</w:rPr><w:t xml:space="preserve">'+x(number(value))+'</w:t></w:r></w:p></w:tc>'
@@ -108,8 +117,8 @@ def docx(data):
     content=branding+paragraph('ELEKTRON NAVBAT HISOBOTI',33,True)+paragraph(f"Davr: {data['start']} — {data['end']}  |  Tayyorlandi: {data['generated']} (UTC+5)",19)
     content+=paragraph('Umumiy natijalar',25,True)+table([['Körsatkiç','Natija']]+data['summary'],[8000,4400])
     content+=paragraph('Hisoblaş qoidalari',21,True)+paragraph(RULES,18)
-    for title,rows in data['groups']:
-        content+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'+branding+paragraph(f"Davr: {data['start']} — {data['end']}",19)+paragraph(title,25,True)+table([HEADERS]+(rows or [['Maʼlumot yo‘q','—','—','—','—','—']]),[4900,1100,1200,1100,2050,2050])
+    for title,rows,headers,widths in detail_tables(data):
+        content+='<w:p><w:r><w:br w:type="page"/></w:r></w:p>'+branding+paragraph(f"Davr: {data['start']} — {data['end']}",19)+paragraph(title,25,True)+table([headers]+(rows or [['Maʼlumot yo‘q']+['—']*(len(headers)-1)]),[round(n*12400/762) for n in widths],allow_split=len(headers)==9)
     import re
     for tag in ('wp:docPr','pic:cNvPr'):
         ids=iter(range(1,1000000))
@@ -142,25 +151,34 @@ def pdf(data):
         document.text(40,y,title,13,(0,0,0));y-=20
     def table(rows,widths,repeat=None):
         nonlocal y
-        for row in rows:
-            wrapped=[document.font.wrap(number(v),widths[i]-14,9) for i,v in enumerate(row)]
-            height=max(len(lines) for lines in wrapped)*12+16
-            if y-height<45:
-                header()
-                if repeat:table([repeat],widths)
-            left=40
-            for i,lines in enumerate(wrapped):
+        def wrap(row):return [document.font.wrap(number(v),widths[i]-14,9) for i,v in enumerate(row)]
+        def draw(lines):
+            nonlocal y
+            height=max(len(v) for v in lines)*12+16;left=40
+            for i,column in enumerate(lines):
                 document.cell_border(left,y-height,widths[i],height)
-                for n,line in enumerate(lines):document.text(left+7,y-17-n*12,line,9,(0,0,0))
+                for n,line in enumerate(column):document.text(left+7,y-17-n*12,line,9,(0,0,0))
                 left+=widths[i]
             y-=height
+        def next_page():
+            header()
+            if repeat:draw(wrap(repeat))
+        for row in rows:
+            lines=wrap(row)
+            if max(len(v) for v in lines)*12+16>y-45 and max(len(v) for v in lines)*12+16<=300:next_page()
+            while any(lines):
+                available=int((y-45-16)//12)
+                if available<1:next_page();continue
+                take=min(available,max(len(v) for v in lines))
+                draw([v[:take] or [''] for v in lines]);lines=[v[take:] for v in lines]
+                if any(lines):next_page()
         y-=24
     header();section('Umumiy natijalar')
     table([['Körsatkiç','Natija']]+data['summary'],[520,242],['Körsatkiç','Natija'])
     section('Hisoblaş qoidalari')
     for line in document.font.wrap(RULES,762,9):document.text(40,y,line,9,(0,0,0));y-=13
-    for title,rows in data['groups']:
-        header();section(title);table([HEADERS]+(rows or [['Maʼlumot yo‘q','—','—','—','—','—']]),[302,65,75,70,125,125],HEADERS)
+    for title,rows,headers,widths in detail_tables(data):
+        header();section(title);table([headers]+(rows or [['Maʼlumot yo‘q']+['—']*(len(headers)-1)]),widths,headers)
     return document.bytes()
 
 FORMATS={'xlsx':('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',xlsx),'docx':('application/vnd.openxmlformats-officedocument.wordprocessingml.document',docx),'pdf':('application/pdf',pdf)}

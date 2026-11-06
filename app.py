@@ -93,10 +93,21 @@ def issue(service, request, lang='uz'):
         c.execute('INSERT INTO print_jobs(ticket,status,created) VALUES (?,?,?)',(cursor.lastrowid,'pending' if config['printer_mode']=='windows' else 'preview',stamp))
         return dict(c.execute('SELECT * FROM tickets WHERE id=?', (cursor.lastrowid,)).fetchone())
 
-def action(user, operation, ticket=None, service=None):
+def action(user, operation, ticket=None, service=None, comment=None):
     with connect() as c:
         c.execute('BEGIN IMMEDIATE')
         window = user['window']
+        if operation=='refer_admin':
+            import referrals,display_adapter
+            if type(ticket) is not int or ticket<=0:raise ValueError('Chipta raqami noto‘g‘ri')
+            row=c.execute('SELECT * FROM tickets WHERE id=?',(ticket,)).fetchone()
+            if not row:raise ValueError('Chipta topilmadi')
+            existing=c.execute('SELECT 1 FROM referrals WHERE ticket=?',(ticket,)).fetchone()
+            referral=referrals.create(c,user,row,comment,now())
+            if not existing:
+                event=c.execute('INSERT INTO events(ticket,operation,user,service,window,created) VALUES (?,?,?,?,?,?)',(ticket,'refer_admin',user['name'],row['service'],window,now()))
+                display_adapter.enqueue_event(c,event.lastrowid,window,'refer_admin',row['label'])
+            return dict(c.execute('SELECT * FROM tickets WHERE id=?',(ticket,)).fetchone())
         permitted = management.allowed(c,user)
         active = c.execute("SELECT * FROM tickets WHERE window=? AND status IN ('called','serving')", (window,)).fetchone()
         if operation == 'next':
@@ -230,6 +241,13 @@ class Handler(BaseHTTPRequestHandler):
                 for row in c.execute('SELECT name,role,window,enabled FROM users'):
                     item=dict(row);item['services']=[r[0] for r in c.execute('SELECT service FROM permissions WHERE user=?',(row['name'],))];users.append(item)
                 return self.send(200,{'settings':management.settings(c),'services':[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,prefix,enabled FROM services')],'windows':[dict(r) for r in c.execute('SELECT * FROM windows')],'users':users})
+        if parsed.path=='/api/referrals':
+            u=self.user()
+            if not u or u['role']!='admin':return self.send(403,{'error':'Administrator login required'})
+            import referrals
+            try:
+                with connect() as c:return self.send(200,{'referrals':referrals.listing(c,status=parse_qs(parsed.query).get('status',[''])[0])})
+            except ValueError as error:return self.send(400,{'error':str(error)})
         if self.path == '/api/displays':
             u=self.user()
             if not u or u['role']!='admin':return self.send(403,{'error':'Administrator login required'})
@@ -281,7 +299,8 @@ class Handler(BaseHTTPRequestHandler):
                 rows = c.execute("SELECT * FROM tickets WHERE (status='waiting' AND service IN (SELECT value FROM json_each(?))) OR (user=? AND status IN ('called','serving')) ORDER BY id", (json.dumps(management.allowed(c,u)),u['name']))
                 tickets=[dict(r) for r in rows]
                 busy=[dict(r) for r in c.execute("SELECT id,label,service,window,status FROM tickets WHERE status IN ('called','serving') AND user<>? ORDER BY window",(u['name'],))]
-                return self.send(200,{'tickets':tickets,'active_windows':busy,'role':u['role'],'window':u['window']})
+                import referrals
+                return self.send(200,{'tickets':tickets,'active_windows':busy,'role':u['role'],'window':u['window'],'referrals':referrals.listing(c,operator=u['name'])})
         path = {'/':'index.html','/staff':'index.html','/tv':'index.html','/tv-audio':'index.html','/admin':'index.html','/style.css':'style.css','/reference-theme.css':'reference-theme.css','/sample-match.css':'sample-match.css','/app.js':'app.js','/announcer.js':'announcer.js','/recordings.js':'recordings.js','/tv-flasher.js':'tv-flasher.js','/alphabet.js':'alphabet.js'}.get(parsed.path)
         if not path:
             return self.send(404,{'error':'Not found'})
@@ -300,7 +319,7 @@ class Handler(BaseHTTPRequestHandler):
         if (origin and origin != 'http://' + self.headers.get('Host','')) or self.headers.get('Content-Type') != 'application/json':
             return self.send(403,{'error':'Same-origin JSON required'})
         try:
-            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update','/api/printer/test','/api/displays','/api/displays/command'):
+            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update','/api/printer/test','/api/displays','/api/displays/command','/api/referrals/resolve'):
                 u = self.user()
                 if not u or u['role'] != 'admin':
                     return self.send(403,{'error':'Administrator login required'})
@@ -325,6 +344,12 @@ class Handler(BaseHTTPRequestHandler):
                 if not mime:raise ValueError('PNG yoki JPEG rasm tanlang')
                 with connect() as c:c.execute('INSERT OR REPLACE INTO branding VALUES (1,?,?)',(payload,mime))
                 return self.send(200,{'ok':True})
+            if self.path=='/api/referrals/resolve':
+                import referrals
+                with connect() as c:
+                    c.execute('BEGIN IMMEDIATE')
+                    row=referrals.resolve(c,self.user(),body.get('id'),body.get('status'),body.get('comment'),now())
+                return self.send(200,{'referral':row})
             if self.path in ('/api/displays','/api/displays/command'):
                 import display_adapter
                 with connect() as c:
@@ -410,7 +435,7 @@ class Handler(BaseHTTPRequestHandler):
                     c.execute('DELETE FROM sessions WHERE token=?',(cookie['session'].value,))
                 return self.send(200,{'ok':True},'session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0')
             if self.path == '/api/action':
-                return self.send(200,action(u,body['action'],body.get('ticket'),body.get('service')))
+                return self.send(200,action(u,body['action'],body.get('ticket'),body.get('service'),body.get('comment')))
             if self.path in ('/api/users','/api/users/update') and u['role'] == 'admin':
                 updating=self.path.endswith('/update')
                 if body.get('role') not in ('admin','staff') or not isinstance(body.get('name'),str) or not re.fullmatch('[A-Za-z0-9_.-]{1,50}',body['name']) or not isinstance(body.get('password',''),str) or ((not updating or body.get('password')) and len(body.get('password',''))<12) or not 1<=int(body['window'])<=100 or type(body.get('enabled',True)) is not bool:

@@ -35,3 +35,6 @@ header .seal img,header .seal.has-logo img{display:block;width:100%;height:100%;
 
 /* Report tables only: plain white cells with a complete black grid. */
 .report-preview .report-table table{border-collapse:collapse;background:#fff;color:#000}.report-preview .report-table th,.report-preview .report-table td{border:1px solid #000;background:#fff!important;color:#000}.report-preview .report-table tbody tr{background:#fff}.report-preview .report-kpis>div{background:#fff;border-color:#000;box-shadow:none}.report-preview .report-kpis span,.report-preview .report-kpis strong{color:#000}
+
+/* Private referral controls use the existing cards; terminal layout is unchanged. */
+.transfer-box label[hidden]{display:none}.transfer-box textarea,.referral-form textarea{width:100%;box-sizing:border-box;min-height:100px;padding:12px;border:1px solid #a0bed2;border-radius:10px;font:inherit}.referral-form{margin-top:18px}.referral-note{white-space:pre-wrap;overflow-wrap:anywhere}.referral-table{border-collapse:collapse;background:#fff;color:#000}.referral-table th,.referral-table td{border:1px solid #000;background:#fff!important;color:#000;white-space:pre-wrap;overflow-wrap:anywhere;min-width:100px;max-width:280px;text-align:left!important}.referral-table td:nth-child(4),.referral-table td:nth-child(7){min-width:230px}.referral-table td:first-child{min-width:85px}

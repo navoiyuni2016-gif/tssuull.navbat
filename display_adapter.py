@@ -64,8 +64,8 @@ def enqueue_event(c,event,window,operation,label):
     try:
         device=c.execute('SELECT * FROM display_devices WHERE window=? AND enabled=1',(window,)).fetchone()
         if not device:return
-        clear=operation in ('finish','absent','transfer')
-        if operation not in ('next','recall','finish','absent','transfer'):return
+        clear=operation in ('finish','absent','transfer','refer_admin')
+        if operation not in ('next','recall','finish','absent','transfer','refer_admin'):return
         simulated=device['transport']=='mock'
         c.execute('INSERT OR IGNORE INTO display_jobs(device,event,operation,value,status,created,error) VALUES (?,?,?,?,?,?,?)',
             (device['id'],event,'clear' if clear else 'recall' if operation=='recall' else 'show','' if clear else label,
