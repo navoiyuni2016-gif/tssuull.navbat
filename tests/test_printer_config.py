@@ -33,3 +33,15 @@ class PrinterConfiguration(unittest.TestCase):
         with patch.object(printer_adapter,'installed_printers') as lookup:
             self.assertFalse(printer_adapter.configure_printer(app.connect,automatic=True));lookup.assert_not_called()
         with app.connect() as c:self.assertEqual(management.settings(c)['printer_name'],'Existing driver')
+
+    def test_exe_preset_is_saved_without_driver_and_does_not_replay_jobs(self):
+        old=app.issue(1,'exe-preset-old-request-123')
+        with app.connect() as c:management.save_settings(c,dict(printer_mode='windows',printer_name='Old driver',paper_width_mm=58))
+        with patch.object(printer_adapter,'installed_printers') as lookup:
+            printer_adapter.apply_kiosk_preset(app.connect);lookup.assert_not_called()
+        new=app.issue(2,'exe-preset-new-request-123')
+        with app.connect() as c:
+            cfg=management.settings(c)
+            self.assertEqual((cfg['printer_mode'],cfg['printer_name'],cfg['paper_width_mm']),('windows','KPOS_80 Printer(1)',80))
+            jobs=dict(c.execute('SELECT ticket,status FROM print_jobs').fetchall())
+            self.assertEqual(jobs[old['id']],'preview');self.assertEqual(jobs[new['id']],'pending')

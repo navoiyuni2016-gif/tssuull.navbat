@@ -24,6 +24,8 @@ def matching_server(directory):
 
 
 def ensure_server(directory):
+    import app,printer_adapter
+    printer_adapter.apply_kiosk_preset(app.connect)
     if matching_server(directory):return
     directory.mkdir(parents=True,exist_ok=True)
     environment=dict(os.environ,NAVBAT_DATA=str(directory))
@@ -143,7 +145,10 @@ def main():
     os.environ['NAVBAT_DATA']=str(data_directory())
     import app
     if args.server:
-        app.initialize();app.run_server('0.0.0.0',8080)
+        app.initialize()
+        import printer_adapter
+        printer_adapter.apply_kiosk_preset(app.connect)
+        app.run_server('0.0.0.0',8080)
     else:gui()
 
 if __name__=='__main__':main()

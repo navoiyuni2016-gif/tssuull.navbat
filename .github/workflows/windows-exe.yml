@@ -8,6 +8,13 @@ on:
       - 'packaging/**'
       - 'desktop_launcher.py'
       - 'desktop_runtime.py'
+      - 'printer_adapter.py'
+      - 'app.py'
+      - 'management.py'
+      - 'database.py'
+      - 'web/**'
+      - 'windows/**'
+      - 'fonts/**'
 permissions:
   contents: write
 env:

@@ -9,7 +9,7 @@ Windows 10/11 **64-bit**. Python alohida örnatilmaydi; ilova bilan birga keladi
 3. Desktopdagi **TOShDOTAU** yorliğini bosing.
 4. Birinçi marta kamida 12 belgili admin parolini ikki marta kiriting. Login: **admin**. Keyingi oçilişlarda parol yaratilişi söralmaydi.
 5. Terminal Edge’da töliq ekranda oçiladi. Oddiy oynaga ötiş uçun Alt+F4; boşqaruv oynasida administrator, xodim, TV va printer tugmalari bor. Bu oddiy EXE rejimi OSni qulflamaydi; talabani faqat terminalda saqlaş uçun Windows Assigned Access alohida sozlanadi.
-6. **Printerni sozlaş** → Windows’dagi `KPOS_80 Printer(1)`ni tanlang → Saqlaş. Yoki administrator panelidagi printer sozlamalaridan foydalaning. Ulangan qurilmada bitta çekni sinang.
+6. Printer qölda tanlanmaydi: EXE har oçilişda `printer_mode=windows`, `printer_name=KPOS_80 Printer(1)`, `paper_width_mm=80`ni avtomatik saqlaydi. Eski bazadan köçirilgan printer sozlamasi ham shu qiymatlarga ötiladi. Windows’da aynan shu drayver örnatilgan bölsin. Ulangan qurilmada bitta çekni sinang. Printer vaqtinça öçiq bölsa sozlama qoladi, bosma xatosi körsatiladi; PDF oynasi oçilmaydi. Eski sinov çiptalari avtomatik qayta çop etilmaydi.
 
 Server fonda işlaydi; boşqaruv oynasini yopiş bazani öçirmaydi. Windows qayta yoqilganda ixtiyoriy Startup yorliği joriy foydalanuvçi kirgaç ilovani qayta oçadi. Bu Windows hisobiga avtomatik kiriş yoki tizim xizmati örnini bosmaydi. Töliq qulflangan boot rejimi alohida qurilma sozlamasi.
 

@@ -94,3 +94,14 @@ def configure_printer(connect, name=KIOSK_PRINTER, *, automatic=False):
             return False
         management.save_settings(c,dict(printer_mode='windows',printer_name=name,paper_width_mm=80))
     return True
+
+
+def apply_kiosk_preset(connect):
+    """The dedicated Windows EXE always starts with the user's KPOS/80 mm preset.
+
+    Store the selection even if the printer is temporarily offline. The durable
+    worker reports driver/printing failures; it never opens a browser PDF dialog
+    and never replays old preview jobs when these settings change.
+    """
+    with connect() as c:
+        management.save_settings(c,dict(printer_mode='windows',printer_name=KIOSK_PRINTER,paper_width_mm=80))
