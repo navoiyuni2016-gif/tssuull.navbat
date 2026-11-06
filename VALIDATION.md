@@ -114,3 +114,17 @@ Foydalanuvchining keyingi «EXE’da bloklama, qo‘lda kiritilsin» ko‘rsatma
 - Paketga pyserial 3.5 va litsenziyasi, qo‘lda sozlash yo‘riqnomasi kiritildi. Setup/ZIP Windows PE x64 va universitet ikonkasini saqlaydi. Yakuniy yuklashda SHA256 va ZIP CRC tekşiriladi.
 
 Userning haqiqiy COM2 baud/parity/stop bits va fizik show/clear shablonlari hali aniqlanmagan. To‘liq profil bo‘lsa real COM/TCP yozuvi yoqiladi; bu model avtomatik topilganini yoki apparat tasdiğini anglatmaydi. `sent` faqat transport yozuvi tugaganini bildiradi; LED ACK yoki ekran ko‘rinishi tasdiqlanmaydi. Agent transporti amalga oşirilmagan. Qoidalar va formatlar: [LED_QOLDA_SOZLASH.md](LED_QOLDA_SOZLASH.md).
+
+## X96: 172.20.20.26 server va fullscreen avtostart — Android 1.0.8
+
+Tekşirilgan APK manbasi `bdd21bcf4f0023a47ba506ab9016d453c4ce21f7`, CI tag `android-build-8` aynan shu commitga mosligi git orqali tekşirildi. Android workflow: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42197136215 . Java/Gradle build, URL unit testlari va haqiqiy Android 11/API30 WebView emulyator sinovlari muvaffaqiyatli.
+
+- Birinçi yangilanişda server `http://172.20.20.26:8080`, avtostart true qilib bir marta saqlanadi. Keyingi qölda server özgarishi saqlanadi, PIN özgarmaydi. Default/migratsiya, recreate va PIN saqlanişi emulyatorda tekşirildi.
+- Mavjud fullscreen/ekranni uyğoq saqlaş, brauzer manzil satrisiz native WebView, private LAN server qaytganda avtomatik qayta ulaniş va gesturesiz WAV ijrosi emulyatorda ötdi. Home intent va boot receiver ro‘yxatdan ötganligi tekşirildi. Android 10+da Home rolini söraydigan tizim oynasi ishlatiladi; foydalanuvçi bir marta tanlaydi.
+- X96ning `172.20.20.27` manzili server maydoniga kiritilmaydi. APK tizim IPsini o‘zgartirmaydi; router/Android’da sozlanadi. Ilova serverdagi joriy TV frontendini oçadi; aloqa protokoli, universitet brendi, navbat va ovozlar almashtirilmadi.
+- Playwright/Chromium’da haqiqiy backend va APKning CSS asseti bilan 7 viewport: 640×360, 853×480, 960×540, 1280×720, 1366×768, 1920×913, 1920×1080. Beshta faol oyna va kutayotganlar ustma-ust tuşmadi, ekran o‘lçamidan çiqmadi. 1920×913dagi 45px ortiqça cho‘ziliş APKdagi viewport/min-height qoidalari bilan tuzatildi; ranglar/font mavzusi almaştirilmadi. Bu test Android apparati emas, Chromium layout tekşiruvi.
+- Yakuniy APK `versionCode=8`, `versionName=1.0.8`, minSdk21; native CPU `.so` yo‘q. AAPT bilan metadata, ZIP CRC, DEXda server IPsi va oxirgi CSS assetning manbaga aynan mosligi tekşirildi.
+- Apksigner bilan v1/v2/v3 imzo tekşiruvlari ötdi. Sertifikat SHA256 avvalgi APK bilan bir xil: `d5309630f183fcd76f0652f3d0eedb01acfef71d9a065b9874550efa69586fc9`; Android mavjud nusxa ustiga yangilanişni qabul qiladi. Maxfiy kalit/parol Git’ga yuborilmadi.
+- Signed APK SHA256: `97a24fb81d8c101f9a2c6caa41964353ad56233b286408b84d35d0a1d954529c`. O‘rnatiladigan fayl: `downloads/TOShDOTAU-TV.apk`; CI’dagi unsigned ZIP o‘rnatish fayli emas.
+
+Jismoniy X96 power-cycle, OEM avtostart siyosati, 172.20.20.26dagi foydalanuvchi LAN/firewall va real karnay/HDMI apparati bu muhitda tekşirilmagan. **TOŞDÖTAU TV → Home/Launcher → Always**ni bir marta tanlab, X96ni o‘chirib-yoqib sinang. Yo‘riqnoma [TV_ANDROID.md](TV_ANDROID.md)da.

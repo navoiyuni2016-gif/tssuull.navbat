@@ -57,3 +57,5 @@ GitHub Android workflow Java/Gradle orqali APK yig‘adi; manzil tekşiruvlarini
 - Dizayn backenddan olinadi: hozirgi universitet logosi, moviy fon, yirik çipta, xizmat oynalari va kutayotganlar saqlanadi. APK faqat kichik/dense TV viewportda beshta oynani siğdiradi, yangi dizayn bilan almaştirmaydi.
 - **TOŞDÖTAU TV → Home/Launcher → Always** bir marta tanlansa, Android Home vazifasi orqali qayta yoqilişda TV ilovasi oçiladi. Android 10+da ilova tizimning bu tanlovini foydalanuvçi örniga yashirinça bajara olmaydi. Qurilma proşivkasidagi avtostart taqiği yoki Force stop mavjud bölsa, uni X96da tekşiring.
 - Android 10+da ilova Home rolini söraydigan tizim oynasini oçadi; eski Android’da Home sozlamasi oçiladi. Boot va APK yangilanişi hodisalari qöllanadi. Ilova Home bölsa doimiy ekran/brauzersiz rejim ishlar.
+
+Tayyor yangilaniş: **1.0.8** (versionCode 8). Avvalgi APK bilan bir xil imzo: odatda eskisini o‘chirmasdan **Update / Yangilaş** orqali örnatiladi, PIN saqlanadi. Emulyator va layout sinovlari ötdi; qurilmaning Home/avtostart tanlovini X96da bir marta tasdiqlang va qayta yoqib sinang.
