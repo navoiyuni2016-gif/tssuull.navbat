@@ -2,6 +2,17 @@
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[Text.Encoding]::UTF8
 $phase='validate';$doc=$null
+function Get-ReceiptBounds {
+  param([double]$PageWidth,[double]$PageHeight,[double]$PrintableLeft,[double]$PrintableTop,[double]$PrintableWidth,[double]$PrintableHeight,[double]$HardMarginX,[double]$HardMarginY)
+  # Printer coordinates start at the hardware margin. Keep all ink inside
+  # both the requested paper and the driver's actual printable rectangle.
+  $left=[Math]::Max(12,[Math]::Max($PrintableLeft,$HardMarginX)+4)
+  $top=[Math]::Max(12,[Math]::Max($PrintableTop,$HardMarginY)+4)
+  $right=[Math]::Min($PageWidth-12,$PrintableLeft+$PrintableWidth-4)
+  $bottom=[Math]::Min($PageHeight-12,$PrintableTop+$PrintableHeight-4)
+  if($right-$left -lt 40 -or $bottom-$top -lt 40){throw 'Printer bosma maydoni juda kichik. Windows qogoz olchamini tekshiring.'}
+  @{X=[single]($left-$HardMarginX);Y=[single]($top-$HardMarginY);Width=[single]($right-$left);Height=[single]($bottom-$top)}
+}
 try {
   Add-Type -AssemblyName System.Drawing
   $t=Get-Content -LiteralPath $TicketFile -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -24,17 +35,19 @@ try {
     $format=New-Object Drawing.StringFormat;$format.Alignment=[Drawing.StringAlignment]::Center
     try {
       $event.Graphics.PageUnit=[Drawing.GraphicsUnit]::Display
-      $event.Graphics.TranslateTransform(-$event.PageSettings.HardMarginX,-$event.PageSettings.HardMarginY)
-      $y=[single]12;$w=[single]($event.PageBounds.Width-24)
+      $area=$event.PageSettings.PrintableArea
+      $bounds=Get-ReceiptBounds -PageWidth $event.PageBounds.Width -PageHeight $event.PageBounds.Height -PrintableLeft $area.Left -PrintableTop $area.Top -PrintableWidth $area.Width -PrintableHeight $area.Height -HardMarginX $event.PageSettings.HardMarginX -HardMarginY $event.PageSettings.HardMarginY
+      $x=[single]$bounds.X;$y=[single]$bounds.Y;$w=[single]$bounds.Width
+      $layout=New-Object Drawing.SizeF($w,10000)
       foreach($line in @($t.university,$t.service)) {
-        $size=$event.Graphics.MeasureString([string]$line,$normal,[int]$w)
-        $event.Graphics.DrawString([string]$line,$normal,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF(12,$y,$w,($size.Height+6))),$format)
+        $size=$event.Graphics.MeasureString([string]$line,$normal,$layout,$format)
+        $event.Graphics.DrawString([string]$line,$normal,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF($x,$y,$w,($size.Height+6))),$format)
         $y+=$size.Height+10
       }
-      $event.Graphics.DrawString([string]$t.label,$large,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF(12,$y,$w,65)),$format);$y+=70
+      $event.Graphics.DrawString([string]$t.label,$large,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF($x,$y,$w,65)),$format);$y+=70
       foreach($line in @([string]$t.created,([string]$t.ahead_label+': '+$t.ahead))) {
-        $size=$event.Graphics.MeasureString($line,$normal,[int]$w)
-        $event.Graphics.DrawString($line,$normal,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF(12,$y,$w,($size.Height+6))),$format);$y+=$size.Height+8
+        $size=$event.Graphics.MeasureString($line,$normal,$layout,$format)
+        $event.Graphics.DrawString($line,$normal,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF($x,$y,$w,($size.Height+6))),$format);$y+=$size.Height+8
       }
       $event.HasMorePages=$false
     } finally {$normal.Dispose();$large.Dispose();$format.Dispose()}
