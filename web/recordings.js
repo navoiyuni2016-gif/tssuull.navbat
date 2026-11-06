@@ -4,8 +4,8 @@ class RecordedAnnouncer {
     this.AudioClass=AudioClass; this.status=status; this.files={}; this.prefix='A'; this.enabled=false;
     this.pending=[]; this.lastId=0; this.generation=0; this.playing=false; this.current=null;
   }
-  configure(files,prefix='A'){this.files=files;this.prefix=prefix;}
-  missing(){return ['ticket','prefix_'+this.prefix,'window',...Array.from({length:10},(_,n)=>'digit_'+n)].filter(k=>!this.files[k]);}
+  configure(files,prefix='A'){this.files=files;this.prefixes=Array.isArray(prefix)?prefix:[prefix];this.prefix=this.prefixes[0]||'A';}
+  missing(){return ['ticket',...(this.prefixes||[this.prefix]).map(p=>'prefix_'+p),'window',...Array.from({length:10},(_,n)=>'digit_'+n)].filter(k=>!this.files[k]);}
   async enable(){
     if(this.missing().length)throw Error('Yetishmayotgan ovozlar: '+this.missing().join(', '));
     // User gesture starts an actual clip, permitting subsequent chained playback.

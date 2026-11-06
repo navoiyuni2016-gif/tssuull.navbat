@@ -76,7 +76,8 @@ def issue(service, request, lang='uz'):
             if old['service'] != service:
                 raise ValueError('Request ID belongs to another service')
             return dict(old)
-        if not c.execute('SELECT 1 FROM services WHERE id=? AND enabled=1', (service,)).fetchone():
+        chosen=c.execute('SELECT prefix FROM services WHERE id=? AND enabled=1',(service,)).fetchone()
+        if not chosen:
             raise ValueError('Xizmat topilmadi yoki faol emas')
         config = management.settings(c)
         current = dt.datetime.now(TZ)
@@ -86,7 +87,7 @@ def issue(service, request, lang='uz'):
         day = stamp[:10]
         number = c.execute('SELECT coalesce(max(number),0)+1 FROM tickets'+(' WHERE day=?' if config['daily_reset'] else ''), (day,) if config['daily_reset'] else ()).fetchone()[0]
         ahead = c.execute("SELECT count(*) FROM tickets WHERE service=? AND status='waiting'", (service,)).fetchone()[0]
-        label = config['prefix'] + str(number).zfill(3)
+        label = (chosen['prefix'] or config['prefix']) + str(number).zfill(3)
         cursor = c.execute('INSERT INTO tickets(day,number,service,request,created,label,ahead,lang) VALUES (?,?,?,?,?,?,?,?)', (day, number, service, request, stamp,label,ahead,lang))
         c.execute("INSERT INTO events(ticket,operation,service,created) VALUES (?,'issued',?,?)",(cursor.lastrowid,service,stamp))
         c.execute('INSERT INTO print_jobs(ticket,status,created) VALUES (?,?,?)',(cursor.lastrowid,'pending' if config['printer_mode']=='windows' else 'preview',stamp))
@@ -224,7 +225,7 @@ class Handler(BaseHTTPRequestHandler):
                 users=[]
                 for row in c.execute('SELECT name,role,window,enabled FROM users'):
                     item=dict(row);item['services']=[r[0] for r in c.execute('SELECT service FROM permissions WHERE user=?',(row['name'],))];users.append(item)
-                return self.send(200,{'settings':management.settings(c),'services':[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,enabled FROM services')],'windows':[dict(r) for r in c.execute('SELECT * FROM windows')],'users':users})
+                return self.send(200,{'settings':management.settings(c),'services':[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,prefix,enabled FROM services')],'windows':[dict(r) for r in c.execute('SELECT * FROM windows')],'users':users})
         if self.path == '/api/audio':
             with connect() as c:
                 return self.send(200, {'files':audio_store.manifest(c)})
@@ -261,7 +262,7 @@ class Handler(BaseHTTPRequestHandler):
                 queue=[dict(r) for r in c.execute("SELECT id,number,label,service FROM tickets WHERE status='waiting' ORDER BY id LIMIT 5")]
                 window_calls=[dict(r) for r in c.execute("SELECT calls.id,tickets.label,tickets.number,calls.window,calls.service,services.name AS service_name FROM calls JOIN tickets ON tickets.id=calls.ticket JOIN services ON services.id=calls.service WHERE calls.id IN (SELECT max(id) FROM calls GROUP BY window) ORDER BY calls.window")]
                 waiting = c.execute("SELECT count(*) FROM tickets WHERE status='waiting'").fetchone()[0]
-                self.send(200,dict(university=config['university'],custom_background=any((ROOT/'web'/'assets'/name).is_file() for name in ('campus-background.png','campus-background.jpg','campus-background.jpeg')),custom_logo=bool(c.execute('SELECT 1 FROM branding WHERE id=1').fetchone()) or (ROOT/'web'/'assets'/'university-logo.png').is_file(),settings={k:config[k] for k in ('prefix','idle_seconds','tv_rows','printer_mode')},services=[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,enabled FROM services WHERE enabled=1')],calls=[dict(r) for r in calls],window_calls=window_calls,queue=queue,waiting=waiting))
+                self.send(200,dict(university=config['university'],custom_background=any((ROOT/'web'/'assets'/name).is_file() for name in ('campus-background.png','campus-background.jpg','campus-background.jpeg')),custom_logo=bool(c.execute('SELECT 1 FROM branding WHERE id=1').fetchone()) or (ROOT/'web'/'assets'/'university-logo.png').is_file(),settings={k:config[k] for k in ('prefix','idle_seconds','tv_rows','printer_mode')},services=[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,prefix,enabled FROM services WHERE enabled=1')],calls=[dict(r) for r in calls],window_calls=window_calls,queue=queue,waiting=waiting))
             return
         if self.path == '/api/work':
             u = self.user()
@@ -358,10 +359,13 @@ class Handler(BaseHTTPRequestHandler):
                 if type(body.get('enabled')) is not bool:
                     raise ValueError('Faollik qiymati noto‘g‘ri')
                 with connect() as c:
-                    if body.get('id'):
-                        c.execute('UPDATE services SET name=?,name_en=?,name_ru=?,enabled=? WHERE id=?',(body['name'],body['name_en'],body['name_ru'],body['enabled'],int(body['id'])))
+                    c.execute('BEGIN IMMEDIATE')
+                    identifier=int(body['id']) if body.get('id') else None
+                    prefix=management.validate_service_prefix(c,body.get('prefix'),identifier)
+                    if identifier:
+                        c.execute('UPDATE services SET name=?,name_en=?,name_ru=?,enabled=?,prefix=? WHERE id=?',(body['name'],body['name_en'],body['name_ru'],body['enabled'],prefix,identifier))
                     else:
-                        c.execute('INSERT INTO services(name,name_en,name_ru,enabled) VALUES (?,?,?,?)',(body['name'],body['name_en'],body['name_ru'],body['enabled']))
+                        c.execute('INSERT INTO services(name,name_en,name_ru,enabled,prefix) VALUES (?,?,?,?,?)',(body['name'],body['name_en'],body['name_ru'],body['enabled'],prefix))
                 return self.send(200,{'ok':True})
             if self.path == '/api/windows':
                 identifier=int(body['id'])

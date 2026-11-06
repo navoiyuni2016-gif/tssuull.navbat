@@ -76,7 +76,8 @@ class Features(unittest.TestCase):
         with app.connect() as c:management.save_settings(c,{'weekdays':[(app.dt.datetime.now(app.TZ).weekday()+1)%7]})
         with self.assertRaises(ValueError):app.issue(1,'request-closed-123456')
         with app.connect() as c:management.save_settings(c,{'weekdays':list(range(7)),'prefix':'B','daily_reset':False})
-        self.assertEqual(app.issue(1,'request-prefix-123456')['label'],'B001')
+        with app.connect() as c:c.execute("UPDATE services SET prefix='Z' WHERE id=1")
+        self.assertEqual(app.issue(1,'request-prefix-123456')['label'],'Z001')
 
     def test_english_migration_and_ticket_print_language(self):
         old=app.issue(1,'language-before-migration-123')

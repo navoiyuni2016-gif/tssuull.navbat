@@ -36,3 +36,9 @@ Xodim va X96 ilovaga LAN orqali ulanadi. Server IP manzilini routerda doimiy qil
 GitHub Actions → **Windows EXE** Windows runnerida manba testlarini bajaradi, PyInstaller orqali haqiqiy Windows EXE yaratadi, aynan yig‘ilgan EXE ichida Tk, SQLite, universitet rasmlari, shriftlar, uch hisobot formati va lokal HTTP serverni sinaydi. Ötgan paket NSIS örnatuvçisi va ZIP bilan Releases’ga joylanadi. Jismoniy printer va qurilmadagi Windows/X96 boot sinovi bunga kirmaydi.
 
 Yangi native oyna, WebView2 örnatişi, yangilaş va diagnostika: **[WEBVIEW2_RUNTIME.md](WEBVIEW2_RUNTIME.md)**.
+
+## Bölim harflari
+
+Har bir bölimning öz harfi bor: dastlab beshta xizmatga A, B, C, D, E beriladi. Administrator → Xizmatlar → **Bölim harfi** orqali 1–3 katta lotin harfini kiriting va saqlang. Bir xil prefiks ikki bölimga berilmaydi. Avval çiqarilgan çiptalar özgarmaydi. Raqamlar avvalgidek umumiy ketma-ketlikda: A001, B002, C003; raqamlaşning kunlik/uzluksiz sozlamasi saqlanadi.
+
+Yozib olingan ovoz rejimida yangi B, C, D, E harflari uçun ham ovoz fayllarini Administrator → Ovozlar orqali yuklang. Yetishmayotgan yozuvlar shu yerda körsatiladi. TV/X96 ilovasini yangilanişdan keyin qayta oçing.

@@ -32,9 +32,11 @@ class QueueAnnouncer {
   }
   text(call) {
     const digits = String(call.number).padStart(3, '0').split('').join(' ');
+    const prefix=(call.label||'').match(/^[A-Z]+/)?.[0]||'A';
+    const spokenPrefix=prefix==='A'&&!/^uz/i.test(this.voice.lang)?'А':prefix.split('').join(' ');
     return /^uz/i.test(this.voice.lang)
-      ? `Diqqat! A ${digits} raqamli chipta. ${call.window}-oynaga keling.`
-      : `Внимание! Талон А ${digits}. Подойдите к окну номер ${call.window}.`;
+      ? `Diqqat! ${spokenPrefix} ${digits} raqamli chipta. ${call.window}-oynaga keling.`
+      : `Внимание! Талон ${spokenPrefix} ${digits}. Подойдите к окну номер ${call.window}.`;
   }
   enqueue(calls) {
     for (const call of [...calls].sort((a,b) => a.id-b.id)) {

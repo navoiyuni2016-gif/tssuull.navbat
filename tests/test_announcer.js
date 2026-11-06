@@ -39,3 +39,7 @@ test('speech errors stop queue until explicitly enabled again',()=>{
   announcer.enable(local);assert.equal(spoken.length,2);
   assert.match(spoken[1].text,/А 0 0 1/);
 });
+test('speech uses the actual department letter rather than a fixed A',()=>{
+  const {announcer,local}=fixture();announcer.enable(local);
+  assert.match(announcer.text({label:'B002',number:2,window:1}),/Талон B 0 0 2/);
+});

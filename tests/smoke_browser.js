@@ -18,7 +18,7 @@ const {chromium}=require('playwright');const {spawn}=require('node:child_process
     await page.getByLabel('Ovoz vazifasi',{exact:true}).selectOption('digit_0');
     await page.locator('input[type=file]').setInputFiles({name:'zero.wav',mimeType:'audio/wav',buffer:wav});
     await page.locator('input[type=checkbox]').check();await page.getByRole('button',{name:'Ovozni yuklaş',exact:true}).click();await page.getByText('digit_0 — zero.wav',{exact:true}).waitFor();
-    for(const slot of ['ticket','prefix_A','window',...Array.from({length:10},(_,i)=>'digit_'+i)]){
+    for(const slot of ['ticket','prefix_A','prefix_B','prefix_C','prefix_D','prefix_E','window',...Array.from({length:10},(_,i)=>'digit_'+i)]){
       const r=await context.request.post(base+'/api/audio/upload',{data:{slot,name:slot+'.wav',content:wav.toString('base64'),rights_confirmed:true}});assert.equal(r.ok(),true);
     }
     await context.request.post(base+'/api/settings',{data:{printer_mode:'windows',printer_name:'KPOS_80 Printer(1)',paper_width_mm:80}});

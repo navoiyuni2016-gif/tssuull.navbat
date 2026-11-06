@@ -2,6 +2,7 @@
 import datetime as dt
 import json
 import re
+import itertools
 import alphabet
 
 DEFAULTS = {
@@ -23,7 +24,7 @@ def migrate(c):
  CREATE TABLE IF NOT EXISTS print_jobs(id INTEGER PRIMARY KEY,ticket INTEGER NOT NULL REFERENCES tickets(id),status TEXT NOT NULL,created TEXT NOT NULL,error TEXT);
  ''')
  for table, additions in {
-  'services':{'name_en':"TEXT NOT NULL DEFAULT ''",'name_ru':"TEXT NOT NULL DEFAULT ''",'enabled':'INTEGER NOT NULL DEFAULT 1'},
+  'services':{'prefix':"TEXT NOT NULL DEFAULT ''",'name_en':"TEXT NOT NULL DEFAULT ''",'name_ru':"TEXT NOT NULL DEFAULT ''",'enabled':'INTEGER NOT NULL DEFAULT 1'},
   'calls':{'service':'INTEGER REFERENCES services(id)'},
   'users':{'enabled':'INTEGER NOT NULL DEFAULT 1'},
   'print_jobs':{'retry_key':'TEXT'},
@@ -32,6 +33,13 @@ def migrate(c):
   existing={r[1] for r in c.execute('PRAGMA table_info('+table+')')}
   for column,definition in additions.items():
    if column not in existing:c.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
+ reserved={row['prefix'] for row in c.execute('SELECT prefix FROM services') if isinstance(row['prefix'],str) and re.fullmatch('[A-Z]{1,3}',row['prefix'])}
+ seen=set()
+ for row in c.execute('SELECT id,prefix FROM services ORDER BY id').fetchall():
+  value=row['prefix']
+  if not isinstance(value,str) or not re.fullmatch('[A-Z]{1,3}',value) or value in seen:
+   value=unused_prefix(reserved|seen);reserved.add(value);c.execute('UPDATE services SET prefix=? WHERE id=?',(value,row['id']))
+  seen.add(value)
  for key,value in DEFAULTS.items():c.execute('INSERT OR IGNORE INTO settings VALUES (?,?)',(key,json.dumps(value,ensure_ascii=False)))
  c.execute('CREATE UNIQUE INDEX IF NOT EXISTS print_retry_key ON print_jobs(retry_key) WHERE retry_key IS NOT NULL')
  for table in ('print_jobs','printer_tests'):
@@ -54,6 +62,21 @@ def migrate(c):
  university=c.execute("SELECT value FROM settings WHERE key='university'").fetchone()
  if university:c.execute("UPDATE settings SET value=? WHERE key='university'",(json.dumps(alphabet.text(json.loads(university[0])),ensure_ascii=False),))
  c.execute('PRAGMA user_version=3')
+
+def unused_prefix(used):
+ for size in (1,2,3):
+  for letters in itertools.product('ABCDEFGHIJKLMNOPQRSTUVWXYZ',repeat=size):
+   prefix=''.join(letters)
+   if prefix not in used:return prefix
+ raise ValueError('Bo‘sh prefiks qolmadi')
+
+def validate_service_prefix(c,value,identifier=None):
+ if value is None:
+  row=c.execute('SELECT prefix FROM services WHERE id=?',(identifier,)).fetchone() if identifier else None
+  value=row['prefix'] if row else unused_prefix({row[0] for row in c.execute('SELECT prefix FROM services')})
+ if not isinstance(value,str) or not re.fullmatch('[A-Z]{1,3}',value):raise ValueError('Xizmat prefiksi: 1–3 katta lotin harfi')
+ if c.execute('SELECT 1 FROM services WHERE prefix=? AND id!=?',(value,identifier or -1)).fetchone():raise ValueError('Bu harf boshqa bo‘limga biriktirilgan')
+ return value
 
 def repair_printer_settings(c):
  values={}

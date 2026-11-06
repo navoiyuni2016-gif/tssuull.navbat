@@ -20,3 +20,9 @@ test('audio errors stop playback and retry the same call',async()=>{
   const {a,played}=fixture();await a.enable();played.length=0;a.enqueue([{id:1,number:1,window:1}]);played[0].onerror();await flush();assert.equal(a.enabled,false);assert.equal(a.pending.length,1);
   await a.enable();assert.equal(a.enabled,true);a.disable();await flush();assert.equal(a.playing,false);
 });
+test('department letters require matching clips and use the actual printed label',async()=>{
+  const {a}=fixture();a.configure(a.files,['A','B','C','D','E']);
+  assert.deepEqual(a.missing(),['prefix_B','prefix_C','prefix_D','prefix_E']);
+  for(const p of ['B','C','D','E'])a.files['prefix_'+p]={url:'prefix_'+p};
+  assert.deepEqual(a.missing(),[]);assert.equal(a.clips({label:'B002',number:2,window:3})[1],'prefix_B');
+});

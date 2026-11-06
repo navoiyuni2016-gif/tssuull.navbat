@@ -21,6 +21,7 @@ const terminalGuide={
 };
 
 
+function audioPrefixes(){const list=[...(state?.services||[]).map(s=>s.prefix),...[...(state?.calls||[]),...(state?.window_calls||[]),...(state?.queue||[])].map(c=>(c.label||'').match(/^[A-Z]+/)?.[0])].filter(Boolean);return [...new Set(list.length?list:[state?.settings.prefix||'A'])];}
 const copy=key=>terminalCopy[lang][key];
 function updateBrand(){
  if(!state)return;
@@ -190,9 +191,11 @@ async function adminSection(key,data,panel){
   if(key==='audio')return audioAdmin(panel);
   if(key==='settings'){
     const f=el('form',undefined,panel);f.className='card form-grid settings-form';el('h2','Universitet va tizim sozlamalari',f);const c=data.settings;
-    const fields={university:field(f,'Universitet nomi','text',c.university),prefix:field(f,'Chipta prefiksi (A–Z)','text',c.prefix),open:field(f,'Ish boshlanishi','time',c.open),close:field(f,'Ish tugashi','time',c.close),printer_name:field(f,'Windows printer nomi','text',c.printer_name),paper_width_mm:field(f,'Qog‘oz kengligi (mm)','number',c.paper_width_mm),idle_seconds:field(f,'Bosh sahifaga qaytish (soniya)','number',c.idle_seconds),tv_rows:field(f,'TVda chaqiruvlar soni','number',c.tv_rows)};
+    const fields={university:field(f,'Universitet nomi','text',c.university),open:field(f,'Ish boshlanishi','time',c.open),close:field(f,'Ish tugashi','time',c.close),printer_name:field(f,'Windows printer nomi','text',c.printer_name),paper_width_mm:field(f,'Qog‘oz kengligi (mm)','number',c.paper_width_mm),idle_seconds:field(f,'Bosh sahifaga qaytish (soniya)','number',c.idle_seconds),tv_rows:field(f,'TVda chaqiruvlar soni','number',c.tv_rows)};
+    const serviceCodes=field(f,'Bo‘lim harflari','text',(data.services||[]).map(s=>s.prefix).join(' / '));serviceCodes.readOnly=true;
     const numbering=choice(f,'Raqamlash',[['daily','Har kuni yangidan'],['continuous','Uzluksiz']],c.daily_reset?'daily':'continuous');
     const printer=choice(f,'Printer rejimi',[['html','Brauzer / PDF sinov rejimi'],['windows','Windows drayveri orqali dialogsiz']],c.printer_mode);
+    el('p','Har bir bo‘limning harfini Xizmatlar bo‘limida o‘zgartiring.',f);
     const days=el('fieldset',undefined,f);el('legend','Ish kunlari',days);const selected=[];
     ['Dushanba','Seshanba','Chorshanba','Payshanba','Juma','Shanba','Yakshanba'].forEach((name,i)=>{const box=field(days,name,'checkbox');box.checked=c.weekdays.includes(i);selected.push(box)});
     submitForm(f,async()=>{const body={};for(const [k,input] of Object.entries(fields))body[k]=input.type==='number'?Number(input.value):input.value;
@@ -226,8 +229,9 @@ async function adminSection(key,data,panel){
     el('h2','Xizmatlar',panel);
     for(const s of [...data.services,{id:null,name:'',name_en:'',name_ru:'',enabled:1}]){
       const f=el('form',undefined,panel);f.className='card form-grid';el('h3',s.id?'Xizmat '+s.id:'Yangi xizmat',f);
+      const prefix=field(f,'Bo‘lim harfi (A–Z)','text',s.prefix||'');prefix.maxLength=3;prefix.pattern='[A-Z]{1,3}';prefix.required=true;prefix.oninput=()=>{prefix.value=prefix.value.toUpperCase()};
       const uz=field(f,'Nomi — o‘zbek lotin','text',s.name),en=field(f,'Nomi — inglizcha','text',s.name_en),ru=field(f,'Nomi — ruscha','text',s.name_ru),on=field(f,'Faol','checkbox');on.checked=!!s.enabled;
-      submitForm(f,()=>api('services',{id:s.id,name:uz.value,name_en:en.value,name_ru:ru.value,enabled:on.checked}));
+      submitForm(f,()=>api('services',{id:s.id,prefix:prefix.value.trim().toUpperCase(),name:uz.value,name_en:en.value,name_ru:ru.value,enabled:on.checked}));
     }
   }
   if(key==='windows'){
@@ -290,7 +294,7 @@ function soundControls(){
   mode.onchange=()=>{announcer.disable();recorded.disable();audioMode=mode.value;clear();tv()};
   const select=choice(box,'Lokal ovoz',announcer.voices().map(v=>[v.voiceURI,v.name+' ('+v.lang+')']),voiceURI);select.onchange=()=>{voiceURI=select.value};
   if(audioMode==='recorded')select.parentElement.hidden=true;
-  button('Ovozni yoqish',async()=>{if(audioMode==='recorded'){recorded.configure(audioFiles,state.settings.prefix);await recorded.enable();return;}
+  button('Ovozni yoqish',async()=>{if(audioMode==='recorded'){recorded.configure(audioFiles,audioPrefixes());await recorded.enable();return;}
     const voice=announcer.voices().find(v=>v.voiceURI===select.value);if(!voice)throw Error('Lokal o‘zbek yoki rus ovozi topilmadi. Yuklangan ovozlardan foydalaning yoki Windows nutq paketini o‘rnating.');voiceURI=voice.voiceURI;announcer.enable(voice);},box);
   button('Ovozni sinash',()=>audioMode==='recorded'?recorded.test():announcer.test(),box);
   button('Ovozni o‘chirish',()=>{announcer.disable();recorded.disable()},box);
@@ -334,7 +338,7 @@ async function pollCalls(){
 async function route(){if(isTV())tv();else if(location.pathname==='/admin')await admin();else if(location.pathname==='/staff')await staff();else terminal()}
 async function refresh(){
   try{state=await api('state');updateBrand();document.body.dataset.connection='online';document.querySelector('#connection').textContent='● Ulangan';
-    if(isTV()){audioFiles=(await api('audio')).files;recorded.configure(audioFiles,state.settings.prefix);const newest=Math.max(0,...state.calls.map(c=>c.id));if(callCursor!==null&&newest<callCursor){callCursor=newest;recorded.lastId=newest;announcer.seen.clear();tvFlasher.lastId=newest;tvFlasher.pending=[];}await pollCalls();tv();await autoStartTVAudio()}
+    if(isTV()){audioFiles=(await api('audio')).files;recorded.configure(audioFiles,audioPrefixes());const newest=Math.max(0,...state.calls.map(c=>c.id));if(callCursor!==null&&newest<callCursor){callCursor=newest;recorded.lastId=newest;announcer.seen.clear();tvFlasher.lastId=newest;tvFlasher.pending=[];}await pollCalls();tv();await autoStartTVAudio()}
     if(!started){started=true;await route()}
     if(location.pathname==='/staff'&&document.querySelector('#staff-data')&&!document.activeElement?.matches('select,button'))try{await staffData(await api('work'))}catch{login()}
     return true;
@@ -351,7 +355,7 @@ async function audioAdmin(parent=main){
   el('p','sounds.rar ni kompyuteringizda oching. Ichidagi WAV yoki MP3 fayllarni bu yerda bittadan tanlang (8 MB gacha). Har yozuvni tegishli belgi bilan saqlang.',card);
   const form=el('form',undefined,card);form.className='audio-upload-form';
   const slot=el('select',undefined,form);slot.setAttribute('aria-label','Ovoz vazifasi');
-  const slots=[['attention','Diqqat (ixtiyoriy)'],['ticket','Chipta so‘zi'],['prefix_'+state.settings.prefix,state.settings.prefix+' harfi'],['window','Oyna so‘zi'],...Array.from({length:10},(_,n)=>['digit_'+n,n+' raqami'])];
+  const slots=[['attention','Diqqat (ixtiyoriy)'],['ticket','Chipta so‘zi'],...audioPrefixes().map(p=>['prefix_'+p,p+' harfi']),['window','Oyna so‘zi'],...Array.from({length:10},(_,n)=>['digit_'+n,n+' raqami'])];
   for(const [value,name] of slots){const option=el('option',name,slot);option.value=value;}
   const custom=el('input',undefined,form);custom.placeholder='Ixtiyoriy: window_1 yoki number_123';custom.setAttribute('aria-label','Maxsus ovoz belgisi');
   const file=el('input',undefined,form);file.type='file';file.accept='.wav,.mp3,audio/wav,audio/mpeg';file.required=true;file.setAttribute('aria-label','Ovoz fayli');decorateFile(file);
@@ -361,7 +365,7 @@ async function audioAdmin(parent=main){
   const list=el('div',undefined,card);
   async function render(){
     list.replaceChildren();const files=(await api('audio')).files;
-    recorded.configure(files,state.settings.prefix);const required=el('section',undefined,list);required.className='audio-requirements'+(recorded.missing().length?'':' complete');el('h3',recorded.missing().length?'Yetishmayotgan asosiy ovozlar':'Ovoz to‘plami tayyor',required);const chips=el('div',undefined,required);chips.className='audio-chips';for(const key of recorded.missing())el('span',/^digit_[0-9]$/.test(key)?key.slice(6):(slots.find(s=>s[0]===key)?.[1]||key),chips);
+    recorded.configure(files,audioPrefixes());const required=el('section',undefined,list);required.className='audio-requirements'+(recorded.missing().length?'':' complete');el('h3',recorded.missing().length?'Yetishmayotgan asosiy ovozlar':'Ovoz to‘plami tayyor',required);const chips=el('div',undefined,required);chips.className='audio-chips';for(const key of recorded.missing())el('span',/^digit_[0-9]$/.test(key)?key.slice(6):(slots.find(s=>s[0]===key)?.[1]||key),chips);
     for(const [key,entry] of Object.entries(files)){
       const row=el('div',undefined,list);row.className='audio-row';el('span',key+' — '+entry.name,row).className='technical';
       const player=el('audio',undefined,row);player.controls=true;player.preload='none';player.src=entry.url;
@@ -379,7 +383,7 @@ async function audioAdmin(parent=main){
 document.addEventListener('pointerdown',async()=>{
   if(location.pathname!=='/tv'||!state||recorded.enabled||announcer.enabled)return;
   try{
-    recorded.configure(audioFiles,state.settings.prefix);
+    recorded.configure(audioFiles,audioPrefixes());
     if(!recorded.missing().length){await recorded.enable();return;}
     const voices=announcer.voices();const voice=voices.find(v=>/^uz/i.test(v.lang))||voices[0];
     if(voice)announcer.enable(voice);
