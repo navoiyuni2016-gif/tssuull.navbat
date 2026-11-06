@@ -9,6 +9,7 @@ on:
       - 'desktop_launcher.py'
       - 'desktop_runtime.py'
       - 'printer_adapter.py'
+      - 'tests/test_frozen_windows.py'
       - 'app.py'
       - 'management.py'
       - 'database.py'

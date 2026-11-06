@@ -1,5 +1,6 @@
 """Run against the real packaged executable on the Windows build runner."""
 import json
+import database
 import os
 from pathlib import Path
 import sqlite3
@@ -35,6 +36,9 @@ class FrozenWindows(unittest.TestCase):
                         if server.poll() is not None:break
                         time.sleep(.2)
                 self.assertTrue(ready,'Frozen server did not start')
+                with database.connect(root/'data'/'queue.db') as c:
+                    config={key:json.loads(value) for key,value in c.execute('SELECT key,value FROM settings')}
+                    self.assertEqual((config['printer_mode'],config['printer_name'],config['paper_width_mm']),('windows','KPOS_80 Printer(1)',80))
                 with opener.open('http://127.0.0.1:8080/',timeout=5) as response:self.assertIn(b'/app.js',response.read())
                 payload=json.dumps({'service':1,'request':'frozen-http-ticket-request-123'}).encode()
                 request=urllib.request.Request('http://127.0.0.1:8080/api/tickets',data=payload,headers={'Content-Type':'application/json'})
