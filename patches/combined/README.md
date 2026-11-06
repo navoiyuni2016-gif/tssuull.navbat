@@ -6,11 +6,11 @@ Infokioskda mavjud navbat ilovasi ochiq tursin. ZIPni alohida papkaga chiqaring.
 powershell -NoProfile -ExecutionPolicy Bypass -File .\Update-All.ps1
 ```
 
-1. C prefiksli bo‘lim topilsa, mavjud administrator login/parolini mahalliy so‘rovda kiriting. U S ga almashtiriladi; eski chiptalar saqlanadi.
+1. Mavjud administrator login/parolini mahalliy so‘rovda kiriting. Paketdagi qisqa Ting.wav chaqiruv boshlanishiga avtomatik biriktiriladi. C prefiksli bo‘lim topilsa, u S ga almashtiriladi; eski chiptalar saqlanadi.
 2. Skript so‘raganda navbat ilovasini odatdagi administrator paroli bilan yoping, PowerShellda Enter bosing.
 3. Ovoz va chek tuzatmalari o‘rnatilib, mavjud EXE bir marta qayta ochiladi.
 4. F10 → Ovozlar → bir yo‘la biriktirish: S1–S500, sA/sB/sS/sD/sE va p1–p5 fayllarini tanlang. Tasdiqlash belgisini qo‘yib, biriktiring. Bu 510 yozuv foydalanuvchining o‘z ovoz fayllaridir; ular ZIP ichida emas. Oldin shu to‘plamni to‘g‘ri yuklagan bo‘lsangiz, yana yuklash shart emas.
-5. TV ilovasini qayta oching. E012 ni 5-oyna chaqirsa E + S12 + p5 ketma-ketligi ishlaydi. Bitta chek chiqarib, universitet nomi to‘liq tushishini tekshiring.
+5. TV ilovasini qayta oching. E012 ni 5-oyna chaqirsa ting + E + S12 + p5 ketma-ketligi ishlaydi. Bitta chek chiqarib, universitet nomi to‘liq tushishini tekshiring.
 
 Oldingi alohida patchlarni o‘rnatish shart emas. Ulardan biri oldin o‘rnatilgan bo‘lsa ham bu umumiy patchni ishlatish mumkin: o‘rnatilgan qismi takror almashtirilmaydi.
 
@@ -32,3 +32,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\receipt\Update-Receipt.ps1
 Qaytarish C/S biznes sozlamasini va yuklangan ovozlarni o‘zgartirmaydi.
 
 Tekshiruv: ikkala tuzatma birgalikda, takroriy o‘rnatish, zaxira, fayllar to‘g‘riligi va mavjud API orqali C → S; eski C001 saqlanib, keyingi S002 yaratilishi tekshirildi. PowerShell 7.4/Linux ishlatildi. Haqiqiy Windows GDI/KPOS va TV ovozining apparat tekshiruvi bu muhitda bajarilmadi.
+
+## Chekdagi raqam bo‘yicha chaqiruv
+
+Chaqiruv IDsi yoki sinov uchun doimiy 1 ishlatilmaydi: chek yorlig‘i S017 bo‘lsa S harfi + S17.wav, oyna 3 bo‘lsa p3.wav tanlanadi. Boshlanishida Ting.wav ijro etiladi. S1.wav ichida «1 raqamli mijoz», S17.wav ichida «17 raqamli mijoz», p2.wav ichida «2-oynaga o‘ting» yozilgan bo‘lsa, aynan so‘ralgan gap hosil bo‘ladi. Dastur fayl ichidagi nutqni qayta yozmaydi; fayl nomi/to‘liq mazmuni mos bo‘lishi kerak. number_17 ga S1.wav noto‘g‘ri biriktirilsa, endi mos kelmaslik xabari chiqadi.
+
+Ovoz sozlamalarida «Sinov chipta raqami»ga S017 yoki B001 yozing, sinov oynasini tanlang, ovozni yoqib sinang. Avvalgi tugma eng kichik mavjud son bilan sinagan. Eski C tarixiy yozuvlari endi faol bo‘limlar ovozlari ro‘yxatiga qo‘shilmaydi; C bo‘limi S ga almashtirilgach C harfi talab qilinmaydi. Eski C chiptalari o‘z yorlig‘ini saqlaydi; ular qayta chaqirilsa, mavjud C ovozi kerak bo‘lishi mumkin.
+
+Oldingi attention yozuvi almashtirishdan avval audio-patch-backups/audio-before-*.json ichida qayd qilinadi; ovozning eski blob fayli o‘chirilmaydi. Istasangiz Ovozlar panelidan o‘zingizning ting yozuvingizni qayta tanlashingiz mumkin. -SkipRename bu paketda API orqali ting biriktirishni ham o‘tkazib yuboradi; asosiy tavsiya — parametrsiz ishlatish.

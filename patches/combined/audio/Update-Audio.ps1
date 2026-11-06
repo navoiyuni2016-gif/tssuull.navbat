@@ -50,15 +50,16 @@ if (-not $Restore) {
         catch { throw 'C -> S uchun navbat ilovasini avval oching va skriptni qayta ishga tushiring. -SkipRename faqat ovoz patchini ornatadi.' }
         $targets = @($state.services | Where-Object { $_.prefix -eq 'C' })
         if ($targets.Count -gt 1) { throw 'Bir nechta C bolimi bor; administrator panelidan tekshiring' }
-        if ($targets.Count -eq 1) {
-            if (@($state.services | Where-Object { $_.prefix -eq 'S' }).Count) { throw 'S harfi boshqa bolimga berilgan. Avval Xizmatlar panelida tekshiring.' }
-            $credential = Get-Credential -UserName 'admin' -Message 'C -> S uchun mavjud administrator login va parolini kiriting'
+        if ($targets.Count -eq 1 -or (Test-Path -LiteralPath (Join-Path $patchRoot 'Ting.wav'))) {
+            if ($targets.Count -eq 1 -and @($state.services | Where-Object { $_.prefix -eq 'S' }).Count) { throw 'S harfi boshqa bolimga berilgan. Avval Xizmatlar panelida tekshiring.' }
+            $credential = Get-Credential -UserName 'admin' -Message 'Ovoz va C -> S sozlamasi uchun mavjud administrator login va parolini kiriting'
             if (-not $credential) { throw 'Administrator kirishi bekor qilindi' }
             $login = @{ name=$credential.UserName; password=$credential.GetNetworkCredential().Password } | ConvertTo-Json -Compress
             try { $null = Invoke-RestMethod "$serverBase/api/login" -Method Post -ContentType 'application/json' -Body ([Text.Encoding]::UTF8.GetBytes($login)) -SessionVariable session -TimeoutSec 10 }
             finally { $login=$null; $credential=$null }
             try {
                 $admin = Invoke-RestMethod "$serverBase/api/admin" -WebSession $session -TimeoutSec 10
+                if ($targets.Count -eq 1) {
                 $service = @($admin.services | Where-Object { $_.id -eq $targets[0].id })[0]
                 if ($service.prefix -ne 'C') { throw 'Bolim boshqa oynada ozgartirilgan; qayta tekshiring' }
                 $null = New-Item -ItemType Directory -Path $backupRoot -Force
@@ -67,6 +68,20 @@ if (-not $Restore) {
                 $body = @{ id=[int]$service.id; name=$service.name; name_en=$service.name_en; name_ru=$service.name_ru; prefix='S'; enabled=[bool]$service.enabled } | ConvertTo-Json -Compress
                 $null = Invoke-RestMethod "$serverBase/api/services" -Method Post -ContentType 'application/json' -Body ([Text.Encoding]::UTF8.GetBytes($body)) -WebSession $session -TimeoutSec 10
                 Write-Host 'C -> S saqlandi. Eski chiptalar va tarix ozgarmadi.' -ForegroundColor Green
+                }
+                $chime=Join-Path $patchRoot 'Ting.wav'
+                if (Test-Path -LiteralPath $chime) {
+                    $null=New-Item -ItemType Directory -Path $backupRoot -Force
+                    $audio=Invoke-RestMethod "$serverBase/api/audio" -WebSession $session -TimeoutSec 10
+                    $bytes=[IO.File]::ReadAllBytes($chime)
+                    $digest=(Get-FileHash -LiteralPath $chime -Algorithm SHA256).Hash.ToLowerInvariant()
+                    if ($audio.files.attention.url -ne ('/audio/'+$digest)) {
+                        $audio.files | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $backupRoot ('audio-before-'+(Get-Date -Format 'yyyyMMdd-HHmmss-fff')+'.json')) -Encoding UTF8
+                        $body=@{slot='attention';name='Ting.wav';content=[Convert]::ToBase64String($bytes);rights_confirmed=$true}|ConvertTo-Json -Compress
+                        $null=Invoke-RestMethod "$serverBase/api/audio/upload" -Method Post -ContentType 'application/json' -Body ([Text.Encoding]::UTF8.GetBytes($body)) -WebSession $session -TimeoutSec 15
+                        Write-Host 'Ting ovozi chaqiruv boshiga biriktirildi.' -ForegroundColor Green
+                    }
+                }
             } finally { try { $null=Invoke-RestMethod "$serverBase/api/logout" -Method Post -ContentType 'application/json' -Body '{}' -WebSession $session -TimeoutSec 5 } catch {} }
         } else { Write-Host 'C prefiksi topilmadi. Harflar ozgartirilmadi; ovoz patchi davom etadi.' }
     }

@@ -3,11 +3,11 @@
   "files": [
     {
       "name": "app.js",
-      "sha256": "ea201701a32b4f28447eeba0ed2b6eab4d40192439f394821fcf37106cca0ab8"
+      "sha256": "f01fa8aeaf6c012781a064bb19d6ba4498aafb93ab38fab099c4969b11bf163b"
     },
     {
       "name": "recordings.js",
-      "sha256": "b32a1299a7b493fe2c77d8fc8739fcac18289e3d257d70b39bd6c4c1e83ed31c"
+      "sha256": "2f1cf013f8a75075dec8c18b0b4c898d74190556960814f3d21789714a50b943"
     }
   ]
 }

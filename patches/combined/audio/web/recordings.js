@@ -8,7 +8,7 @@ class RecordedAnnouncer {
   windowPhrase(n){const file=this.files['window_'+n];const m=file&&(file.name||'').match(/^p([0-9]+)\.(wav|mp3)$/i);return !!(m&&Number(m[1])===Number(n));}
   missing(){
     const prefixes=(this.prefixes||[this.prefix]).map(p=>'prefix_'+p);
-    if(this.phraseMode)return [...prefixes.filter(k=>!this.files[k]),...this.windows.filter(n=>!this.windowPhrase(n)).map(n=>'window_'+n),...(Object.keys(this.files).some(k=>/^number_[1-9][0-9]*$/.test(k))?[]:['number_any'])];
+    if(this.phraseMode)return [...['attention',...prefixes].filter(k=>!this.files[k]),...this.windows.filter(n=>!this.windowPhrase(n)).map(n=>'window_'+n),...(Object.keys(this.files).some(k=>/^number_[1-9][0-9]*$/.test(k))?[]:['number_any'])];
     return ['ticket',...prefixes,'window',...Array.from({length:10},(_,n)=>'digit_'+n)].filter(k=>!this.files[k]);
   }
   async enable(){
@@ -20,19 +20,22 @@ class RecordedAnnouncer {
   }
   disable(){this.generation++;this.enabled=false;this.pending=[];if(this.current)this.current.pause();if(this.cancelClip)this.cancelClip();this.playing=false;this.status('Ovoz o‘chirilgan');}
   enqueue(calls){for(const c of [...calls].sort((a,b)=>a.id-b.id)){if(c.id<=this.lastId)continue;this.lastId=c.id;if(this.enabled)this.pending.push(c);}this.pump();}
-  test(){if(!this.enabled)throw Error('Avval ovozni yoqing');const number=this.phraseMode?Math.min(...Object.keys(this.files).filter(k=>/^number_/.test(k)).map(k=>Number(k.slice(7)))):1;this.pending.push({label:this.prefix+String(number).padStart(3,'0'),number,window:this.phraseMode?this.windows[0]:1});this.pump();}
+  test(label,windowNumber){if(!this.enabled)throw Error('Avval ovozni yoqing');const number=this.phraseMode?Math.min(...Object.keys(this.files).filter(k=>/^number_/.test(k)).map(k=>Number(k.slice(7)))):1;const call={label:label||this.prefix+String(number).padStart(3,'0'),number,window:Number(windowNumber||this.windows[0]||1)};this.clips(call);this.pending.push(call);this.pump();}
   clips(call){
     const digits=n=>String(n).split('').map(d=>'digit_'+d);
     const label=(call.label||'').match(/^([A-Z]+)([0-9]+)$/);
     const number=label?Number(label[2]):call.number;
     const prefix=label?label[1]:this.prefix;
     const numericKey='number_'+number;
+    const numericFile=this.files[numericKey];
+    const namedNumber=numericFile&&(numericFile.name||'').match(/^s([0-9]+)\.(wav|mp3)$/i);
+    if(namedNumber&&Number(namedNumber[1])!==number)throw Error(numericKey+' uchun '+numericFile.name+' mos emas. S'+number+'.wav ni qayta biriktiring');
     // s12.wav is the whole number 12; p5.wav is the whole window-5 phrase.
     // In phrase mode never fall back to the old, possibly misassigned pN digit slots.
     const numbers=this.phraseMode?[numericKey]:this.files[numericKey]?[numericKey]:digits(label?label[2]:String(number).padStart(3,'0'));
     if(this.phraseMode&&!this.windowPhrase(call.window))throw Error('Ovoz yo‘q: p'+call.window+'.wav');
     const tail=this.phraseMode?['window_'+call.window]:['window',...(this.files['window_'+call.window]?['window_'+call.window]:digits(call.window))];
-    const keys=[...(this.files.attention?['attention']:[]),...(!this.phraseMode?['ticket']:[]),'prefix_'+prefix,...numbers,...tail];
+    const keys=[...(this.phraseMode||this.files.attention?['attention']:[]),...(!this.phraseMode?['ticket']:[]),'prefix_'+prefix,...numbers,...tail];
     return keys.map(k=>{
       if(!this.files[k])throw Error('Ovoz yo‘q: '+k+(/^number_/.test(k)?' (s'+number+'.wav)':''));return this.files[k].url;
     });

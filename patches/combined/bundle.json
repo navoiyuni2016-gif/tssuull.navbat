@@ -5,20 +5,24 @@
       "sha256": "428ab001d1757aab4f949052094ac4532d0c5bdbd486e93443bcc76cd4631eec"
     },
     {
+      "path": "audio/Ting.wav",
+      "sha256": "24a63210971ce5da89522d02a7c24b129ee8baec0f413c75ce9fe66af3cf9389"
+    },
+    {
       "path": "audio/Update-Audio.ps1",
-      "sha256": "6992bedddc8cd5749f230fa2cf2a9379d102440cbbe508562f4cd20a4cdfb458"
+      "sha256": "438030b0ab2a015e9c88a8e0c665ae4dad9a72c429f63ef52097fbe5f861ae65"
     },
     {
       "path": "audio/manifest.json",
-      "sha256": "9eeeec08a1d87fc0bae5c30628c674246f4ee45e57277050c60a385aeaeb8545"
+      "sha256": "30a0571caa59c90bf8f3077db62155dfb65b6386476e60ade28279570efd7526"
     },
     {
       "path": "audio/web/app.js",
-      "sha256": "ea201701a32b4f28447eeba0ed2b6eab4d40192439f394821fcf37106cca0ab8"
+      "sha256": "f01fa8aeaf6c012781a064bb19d6ba4498aafb93ab38fab099c4969b11bf163b"
     },
     {
       "path": "audio/web/recordings.js",
-      "sha256": "b32a1299a7b493fe2c77d8fc8739fcac18289e3d257d70b39bd6c4c1e83ed31c"
+      "sha256": "2f1cf013f8a75075dec8c18b0b4c898d74190556960814f3d21789714a50b943"
     },
     {
       "path": "receipt/Update-Receipt.ps1",

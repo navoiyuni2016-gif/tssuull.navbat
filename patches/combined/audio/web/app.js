@@ -21,7 +21,7 @@ const terminalGuide={
 };
 
 
-function audioPrefixes(){const list=[...(state?.services||[]).map(s=>s.prefix),...[...(state?.calls||[]),...(state?.window_calls||[]),...(state?.queue||[])].map(c=>(c.label||'').match(/^[A-Z]+/)?.[0])].filter(Boolean);return [...new Set(list.length?list:[state?.settings.prefix||'A'])];}
+function audioPrefixes(){const active=(state?.services||[]).map(s=>s.prefix).filter(Boolean);return [...new Set(active.length?active:[state?.settings.prefix||'A'])];}
 function audioWindows(){return state?.windows?.map(w=>w.id)||[1,2,3,4,5];}
 function recordingSlot(name){const m=String(name).match(/^([sp])([a-z]+|[0-9]+)\.(wav|mp3)$/i);if(!m)return null;if(m[1].toLowerCase()==='p'){const n=Number(m[2]);return Number.isInteger(n)&&n>=1&&n<=100?'window_'+n:null}if(/^[a-z]{1,3}$/i.test(m[2]))return 'prefix_'+m[2].toUpperCase();const n=Number(m[2]);return n===0?'digit_0':Number.isInteger(n)&&n>=1&&n<=9999?'number_'+n:null}
 const copy=key=>terminalCopy[lang][key];
@@ -365,7 +365,9 @@ function soundControls(){
   if(audioMode==='recorded')select.parentElement.hidden=true;
   button('Ovozni yoqish',async()=>{if(audioMode==='recorded'){recorded.configure(audioFiles,audioPrefixes(),audioWindows());await recorded.enable();return;}
     const voice=announcer.voices().find(v=>v.voiceURI===select.value);if(!voice)throw Error('Lokal o‘zbek yoki rus ovozi topilmadi. Yuklangan ovozlardan foydalaning yoki Windows nutq paketini o‘rnating.');voiceURI=voice.voiceURI;announcer.enable(voice);},box);
-  button('Ovozni sinash',()=>audioMode==='recorded'?recorded.test():announcer.test(),box);
+  const testLabel=field(box,'Sinov chipta raqami (masalan S017)','text');testLabel.value=(audioPrefixes()[0]||'A')+'001';
+  const testWindow=choice(box,'Sinov uchun oyna',audioWindows().map(n=>[String(n),n+'-oyna']),String(audioWindows()[0]));
+  button('Ovozni sinash',()=>{if(audioMode!=='recorded'){announcer.test();return;}const value=testLabel.value.trim().toUpperCase();if(!/^[A-Z]+[0-9]+$/.test(value))throw Error('Chekdagi harf va raqamni kiriting: S017');recorded.test(value,Number(testWindow.value));},box);
   button('Ovozni o‘chirish',()=>{announcer.disable();recorded.disable()},box);
   el('p',soundStatus,box).id='sound-status';
   const missing=el('p','',box);missing.id='missing-voices';
@@ -424,7 +426,7 @@ async function audioAdmin(parent=main){
   el('p','sounds.rar ni kompyuteringizda oching. Ichidagi WAV yoki MP3 fayllarni bu yerda bittadan tanlang (8 MB gacha). Har yozuvni tegishli belgi bilan saqlang.',card);
   const form=el('form',undefined,card);form.className='audio-upload-form';
   const slot=el('select',undefined,form);slot.setAttribute('aria-label','Ovoz vazifasi');
-  const slots=[['attention','Diqqat (ixtiyoriy)'],['ticket','Chipta so‘zi'],...audioPrefixes().map(p=>['prefix_'+p,p+' harfi']),['window','Oyna so‘zi'],...audioWindows().map(n=>['window_'+n,n+'-oyna to‘liq iborasi (p'+n+'.wav)']),...Array.from({length:10},(_,n)=>['digit_'+n,n+' raqami'])];
+  const slots=[['attention','Ting — chaqiruv boshlanishi'],['ticket','Chipta so‘zi'],...audioPrefixes().map(p=>['prefix_'+p,p+' harfi']),['window','Oyna so‘zi'],...audioWindows().map(n=>['window_'+n,n+'-oyna to‘liq iborasi (p'+n+'.wav)']),...Array.from({length:10},(_,n)=>['digit_'+n,n+' raqami'])];
   for(const [value,name] of slots){const option=el('option',name,slot);option.value=value;}
   const custom=el('input',undefined,form);custom.placeholder='Ixtiyoriy: window_1 yoki number_123';custom.setAttribute('aria-label','Maxsus ovoz belgisi');
   const file=el('input',undefined,form);file.type='file';file.accept='.wav,.mp3,audio/wav,audio/mpeg';file.required=true;file.setAttribute('aria-label','Ovoz fayli');decorateFile(file);
@@ -435,7 +437,7 @@ async function audioAdmin(parent=main){
   async function render(){
     list.replaceChildren();const files=(await api('audio')).files;
     recorded.configure(files,audioPrefixes(),audioWindows());const required=el('section',undefined,list);required.className='audio-requirements'+(recorded.missing().length?'':' complete');el('h3',recorded.missing().length?'Yetishmayotgan asosiy ovozlar':'Ovoz to‘plami tayyor',required);const chips=el('div',undefined,required);chips.className='audio-chips';for(const key of recorded.missing())el('span',key==='number_any'?'Son fayllari — s1.wav, s12.wav…':/^digit_[0-9]$/.test(key)?key.slice(6):(slots.find(s=>s[0]===key)?.[1]||key),chips);
-    el('p',recorded.phraseMode?'sN + pN rejimi: harf → to‘liq son → chaqirgan oynaning iborasi. Chipta/Oyna so‘zi va digit yozuvlari bu rejimda ishlatilmaydi.':'Raqamlar bo‘yicha rejim: chipta → harf → raqamlar → oyna. Eski sN/pN to‘plami uchun quyidagi guruhli yuklashdan foydalaning.',list);
+    el('p',recorded.phraseMode?'sN + pN rejimi: ting → chekdagi harf → chekdagi to‘liq son → chaqirgan oynaning iborasi. Chipta/Oyna so‘zi va digit yozuvlari bu rejimda ishlatilmaydi.':'Raqamlar bo‘yicha rejim: chipta → harf → raqamlar → oyna. Eski sN/pN to‘plami uchun quyidagi guruhli yuklashdan foydalaning.',list);
     for(const [key,entry] of Object.entries(files)){
       const named=entry.name.match(/^s([A-Z]{1,3})\.(wav|mp3)$/i);if(key.startsWith('prefix_')&&named&&key!=='prefix_'+named[1].toUpperCase())el('p',key+' uchun '+entry.name+' nomi mos kelmayapti. Faylni tinglab harfini tekshiring.',list);
       const row=el('div',undefined,list);row.className='audio-row';el('span',key+' — '+entry.name,row).className='technical';
@@ -449,7 +451,7 @@ async function audioAdmin(parent=main){
     feedback.textContent='Saqlandi. TVdagi «Ovozni sinash» tugmasi orqali tekshiring.';file.value='';file.resetLabel();await render();
   }catch(e){feedback.textContent=e.message}finally{submit.disabled=false}};
   const bulk=el('section',undefined,card);bulk.className='card';el('h3','sN / pN fayllarini bir yo‘la biriktirish',bulk);
-  el('p','sA.wav → A harfi; s12.wav → 12 soni; p5.wav → 5-oyna to‘liq iborasi. default fayllari taxminan biriktirilmaydi. C uchun sC.wav kerak; sS.wav S harfiga tushadi.',bulk);
+  el('p','sA.wav → A harfi; s12.wav → 12 soni; p5.wav → 5-oyna to‘liq iborasi. default fayllari taxminan biriktirilmaydi. sS.wav S harfiga tushadi. Ting ovozini yuqoridagi ro‘yxatdan alohida yuklang.',bulk);
   const batch=field(bulk,'Ovoz fayllarini birga tanlang','file');batch.multiple=true;batch.accept='.wav,.mp3';
   const preview=el('div',undefined,bulk);const progress=el('p','',bulk);progress.setAttribute('role','status');
   const permission=field(bulk,'Ushbu yozuvlardan foydalanish huquqim bor','checkbox');
