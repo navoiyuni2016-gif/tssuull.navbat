@@ -1,3 +1,8 @@
+/* Keep the native TV viewport bounded without changing the full-HD theme. */
+@media(min-width:600px){
+ body.tv{height:100vh;min-height:0;overflow:hidden}
+ body.tv main,body.tv .tv-dashboard,body.tv .tv-hero,body.tv .tv-windows{min-height:0}
+}
 /* Keep all five windows visible when a TV box uses a dense 960x540 CSS viewport. */
 @media(min-width:600px) and (max-height:850px){
  body.tv{height:100vh;min-height:0;overflow:hidden}
