@@ -2,7 +2,7 @@
 
 **X96 Android TV ilovasi:** [TOShDOTAU-TV.apk](https://github.com/navoiyuni2016-gif/tssuull.navbat/raw/refs/heads/main/downloads/TOShDOTAU-TV.apk) · [Örnatiş va avtostart](TV_ANDROID.md). Windows bilan bir lokal tarmoqda işlaydi.
 
-**Windows uçun tayyor ilova:** [TOShDOTAU-Setup.exe](https://github.com/navoiyuni2016-gif/tssuull.navbat/releases/latest/download/TOShDOTAU-Setup.exe). Python alohida kerak emas. [EXE yöriqnomasi](EXE_BOSHLASH.md). Quyidagi Python buyruqlari manba nusxasi uçun.
+**Windows uçun tayyor ilova:** [TOShDOTAU-Setup.exe](https://github.com/navoiyuni2016-gif/tssuull.navbat/releases/latest/download/TOShDOTAU-Setup.exe). Python alohida kerak emas. Terminal tashqi brauzersiz WebView2 oynasida oçiladi; F10 — administrator. Ilova yopilsa lokal server ham töxtaydi. [EXE yöriqnomasi](EXE_BOSHLASH.md). Quyidagi Python buyruqlari manba nusxasi uçun.
 
 Terminal → çipta → xodim çaqiruvi → TV → xizmatni yakunlaş. Server va SQLite bazasi terminalning özida işlaydi; işlaş vaqtida internet, Docker, taşqi server va eski DLL talab qilinmaydi. Python 3.12+ kerak. Frontend resurslari lokal.
 
@@ -43,7 +43,7 @@ python app.py --reset-admin
 
 1. Administrator → **Ovozlar** sahifasini oçing.
 2. Har WAV yoki MP3 yozuvni tegişli vazifaga biriktiring. Har bir fayl 8 MB gaça; WAV — PCM, mono yoki stereo, 8–96 kHz, 120 soniyagaça. MP3ning brauzerda ijro bölişini tekşiring.
-3. Majburiy belgilar: `ticket` (çipta sözi), `prefix_A` (A harfi), `window` (oyna sözi), `digit_0` dan `digit_9` gaça raqamlar. Bu belgilar texnik identifikator, ularni özgartirmang.
+3. Majburiy belgilar: `ticket` (çipta sözi), `prefix_A`, `prefix_B`, `prefix_C`, `prefix_D`, `prefix_E` (bölim harflari), `window` (oyna sözi), `digit_0` dan `digit_9` gaça raqamlar. Bu belgilar texnik identifikator, ularni özgartirmang.
 4. Ixtiyoriy: `attention` — diqqat; `number_123` — 123 ni bir butun aytiş; `window_1` — 1-oyna raqamini bir butun aytiş. Maxsus belgi maydoniga yozing. Prefiksni B ga almaştirsangiz `prefix_B` yozuvini ham yuklang.
 5. Sahifadagi audio boşqaruvi orqali har yozuvni tinglang. Raqam ovozlariga faqat raqamni aytadigan fayllarni biriktiring, ortiqça sözlar takrorlanmasin.
 6. `/tv-audio` → **Yuklangan ovozlar** → **Ovozni yoqiş** → **Ovozni sinaş**. Brauzer çeklovi sababli TV sahifasi har qayta oçilganda ovozni bir marta yoqing.
@@ -58,7 +58,7 @@ Administrator xizmatlar, oynalar va loginlarni boşqaradi. Beş operator uçun a
 
 Çipta holatlari: kutiş → çaqirildi → xizmat boşlandi → yakunlandi. Faqat çaqirilgan çipta kelmadi deb belgilanadi. Çaqirilgan yoki xizmatdagi çipta boşqa faol xizmatga öşa raqam bilan yönaltiriladi. Ruxsat va holat ötişlari serverda tekşiriladi; SQLite tranzaksiyasi bir çiptani ikki xodimga berişni oldini oladi.
 
-**Sozlamalar**: universitet nomi, PNG/JPEG logotipi, iş kunlari/vaqti, çipta prefiksi, kunlik yoki uzluksiz raqamlaş, printer, qoğoz kengligi, harakatsizlik va TV qatorlari. Keçadan ertalabga ötuvçi tungi iş oraliği qöllanmaydi. Raqamlaş butun universitet uçun umumiy, xizmatlar böyiça alohida emas. Eski çiptalar öçirilmaydi. Vaqt zonasi UTC+5, Asia/Taşkent.
+**Sozlamalar**: universitet nomi, PNG/JPEG logotipi, iş kunlari/vaqti, kunlik yoki uzluksiz raqamlaş, printer, qoğoz kengligi, harakatsizlik va TV qatorlari. Keçadan ertalabga ötuvçi tungi iş oraliği qöllanmaydi. Har bir bölimning harfi Administrator → Xizmatlar’da özgartiriladi (dastlab A–E). Raqamlaş butun universitet uçun umumiy: A001, B002, C003. Eski çiptaning harfi özgarmaydi. Eski çiptalar öçirilmaydi. Vaqt zonasi UTC+5, Asia/Taşkent.
 
 Yuborilgan arxivdagi rasmiy logotip `web/assets/university-logo.png`, fon `web/assets/campus-background.png` sifatida özgartirilmasdan kiritildi. Barcha sahifalar nomi: **TOŞDÖTAU — elektron navbat tizimi**. Administrator yuklagan logotip ustuvor.
 

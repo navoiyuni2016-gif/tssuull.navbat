@@ -10,6 +10,14 @@ const {chromium}=require('playwright');const {spawn}=require('node:child_process
     await page.goto(base+'/admin');await page.getByLabel('Login',{exact:true}).fill('admin');await page.getByLabel('Parol',{exact:true}).fill('browser-test-password-123');
     await page.getByRole('button',{name:'Saqlaş',exact:true}).click();await page.getByRole('heading',{name:'Administrator paneli'}).waitFor();
     await page.getByRole('button',{name:'Sozlamalar',exact:true}).click();await page.getByLabel('Universitet nomi',{exact:true}).waitFor();
+    await page.getByRole('button',{name:'Xizmatlar',exact:true}).click();
+    const prefixes=page.locator('input[pattern="[A-Z]{1,3}"]');await prefixes.nth(4).waitFor();
+    assert.deepEqual((await prefixes.evaluateAll(xs=>xs.map(x=>x.value))).slice(0,5),['A','B','C','D','E']);
+    const second=page.locator('form').filter({has:page.getByRole('heading',{name:'Xizmat 2',exact:true})});
+    await second.locator('input[pattern]').fill('Z');await second.getByRole('button',{name:'Saqlaş',exact:true}).click();await second.getByRole('status').getByText('Saqlandi',{exact:true}).waitFor();
+    assert.equal((await (await context.request.get(base+'/api/state')).json()).services.find(s=>s.id===2).prefix,'Z');
+    await second.locator('input[pattern]').fill('B');await second.getByRole('button',{name:'Saqlaş',exact:true}).click();
+    await page.waitForFunction(async()=>((await (await fetch('/api/state')).json()).services.find(s=>s.id===2).prefix)==='B');
     await page.getByRole('button',{name:'Xodimlar',exact:true}).click();await page.getByRole('heading',{name:'Xodimlar va ruxsatlar'}).waitFor();
     await page.getByRole('button',{name:'Hisobotlar',exact:true}).click();await page.getByText('Çiqarilgan çiptalar',{exact:true}).waitFor();
     await page.getByRole('button',{name:'Ovozlar',exact:true}).click();

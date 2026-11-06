@@ -67,7 +67,7 @@ def run_view(base,role='terminal',open_admin=None,close_file=None,request_file=N
         ending.set();return True
     window.events.closing+=closing
     def loaded():
-        if role=='terminal':window.run_js("document.addEventListener('keydown',function(e){if(e.key==='F10'){e.preventDefault();fetch('/api/desktop/open-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})}if(e.key==='F11'){e.preventDefault();fetch('/api/desktop/toggle-screen',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})}})")
+        if role=='terminal':window.run_js("document.addEventListener('keydown',function(e){if(e.key==='F10'){e.preventDefault();fetch('/api/desktop/open-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})}if(e.key==='F11'){e.preventDefault();fetch('/api/desktop/toggle-screen',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})}});window.__navbatDesktopKeysReady=true")
     window.events.loaded+=loaded
     def monitor():
         if smoke:

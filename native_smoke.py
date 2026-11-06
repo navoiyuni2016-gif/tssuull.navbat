@@ -37,6 +37,12 @@ def test_native(destination):
                         time.sleep(.1)
                     assert count==5,count
                     assert window.native is not None
+                    # pywebview loaded handlers run on separate threads. DOM service
+                    # rendering alone does not prove that the key handler attached.
+                    for _ in range(150):
+                        if read(window,'window.__navbatDesktopKeysReady===true'):break
+                        time.sleep(.1)
+                    assert read(window,'window.__navbatDesktopKeysReady===true'),'Native key handler was not attached'
                     window.run_js("document.dispatchEvent(new KeyboardEvent('keydown',{key:'F10',bubbles:true}))")
                     for _ in range(50):
                         if (control/'open-admin').exists():break
