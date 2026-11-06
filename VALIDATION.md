@@ -71,3 +71,17 @@ Yakuniy ilova manbasi `860ca60582a2684979b219591c4ffd3dcc378be9`, release **wind
 - Serverni yopiş → portni böşatiş → qayta oçiş → çiptaning saqlanişi, ikkinçi serverni rad etiş va administrator parolini tekşiriş testi ötgan.
 
 Jismoniy KPOS_80 printer ulanmagan. Haqiqiy qoğoz, USB uzilişi, Windows 10/11 foydalanuvçi qurilmasidagi örnatiş/boot va X96 ekran-karnay natijalari bu dalillarga kirmaydi. Qurilma diagnostikasi va sinov çeki [WINDOWS_TUZATISH_HISOBOTI.md](WINDOWS_TUZATISH_HISOBOTI.md)da.
+
+## Minutli hisobotlar va LEDning birinçi bosqiçi — 2026-11-06
+
+Tekşirilgan manba `fdf47ddd8b6bf20f0281b54dd6dd55380ec94981`, release **windows-15**. Windows CI barcha bosqiçlarda muvaffaqiyatli: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42176165897 .
+
+- Manba to‘plami: 49 test (47 manba testi, manba bosqiçida 2 Windows frozen testi skip). Keyin haqiqiy yiğilgan EXEning ikki testi ham Windows’da ötdi.
+- Hisobotda 120 soniya → 2.0 minut, 300 soniya → 5.0 minut. Barcha bölimlar va xodimlar, shu jumladan 0 xizmatli xodim körinadi. Har kesimdagi `served` yig‘indisi umumiy jamiga mos. Eski soniya API maydonlari moslik uçun saqlandi; foydalanuvçi interfeysi va eksport minutdan foydalanadi.
+- XLSX/DOCX XML tuzilişi, barcha to‘rt/ichki qora katak çiziqlari, oq fonlar, integer xizmat sonlari, minut uçun bir önlik xona, logo va raqamli kataklar testlarda tekşirildi. Namunalar openpyxl/python-docx bilan mustaqil qayta o‘qildi.
+- Uch sahifali PDF PyMuPDF bilan o‘qildi va rasmlari körib tekşirildi: umumiy natija, bölimlar, operatorlar. Raqamlar uchala formatda bir xil. Misol: 40 çipta, 32 yakunlangan, 3 kelmagan, 5 kutayotgan; bu faqat belgilangan **NAMUNA** maʼlumotlari.
+- Haqiqiy Chromium sinovi yangi Elektron tablolar menyusida sozlama saqlaş, sinov vazifasini yaratish, hisobotda minut yozuvi va qora katak çiziqlari, eski operator/TV/printer oqimini tekşirdi. Ovoz testlari 10/10 ötdi.
+- LED adapteri: 5-oyna çaqiruvi faqat o‘z sinov tablosiga, qayta çaqiruv alohida hodisa, yakunlanganda tozalaş, restartda sozlama saqlanişi, sinov vazifasi statistikani özgartirmasligi, yaroqsiz IDlarni rad etiş va LED jadvali xatosida operator/TV çaqiruvi saqlanişi ötdi. Administratorga tegishli GET/POST huquqlari tekşirildi.
+- Frozen Windows EXE API orqali sinov tablosi sozlandi, operator A001ni çaqirdi va alohida worker vazifani **simulated** holatiga ötkazdi. Shu paketda haqiqiy WebView2/F10/admin login sinovi ham ötdi.
+
+Haqiqiy LED protokoli topilmadi; bu apparat muvaffaqiyati emas. Hech qanday COM/IP/RF buyruq taxminan yuborilmadi; serial/tcp/agent transportlari bloklangan. Ishlab çiqaruvçi modeli, manzil, frame/checksum, ACK va prefiks imkoniyati tasdiqlanmagan. Eski fayllar inventari va keyingi bosqiç [LED_TEXNIK_TAHLIL.md](LED_TEXNIK_TAHLIL.md)da. KPOS/LED/X96 foydalanuvçi qurilmasi sinovi va Word/Excel dasturlarida vizual print-preview bu muhitda bajarilmadi.

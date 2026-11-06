@@ -32,3 +32,9 @@
 Eski `HardwareService` papkasi/arxivi va yonidagi `.config`, `.ini`, `.json` fayllar; mavjud bölsa boshqa sanalgan xizmatlar konfiguratsiyasi yoki ishlab çiqaruvçi protokol hujjati kerak. Tablo/kontroller orqa yorliği va ulaniş sxemasi apparatni aniqlashga yordam beradi. Fayllardagi parol/tokenlar oshkor qilinmaydi. Eski EXE/DLL işga tuşirilmaydi, pullik kod köçirilmaydi va litsenziya tekşiruvi çetlab ötilmaydi.
 
 **Chegara:** apparatsiz modulni haqiqiy LED integratsiyasi tayyor deb talqin qilmang. Hozir protokol tasdiqlanmagan va jismoniy tablo sinovi bajarilmagan.
+
+## Amalga oşirilgan xavfsiz birinçi bosqiç
+
+`display_adapter.py`, SQLite `display_devices`/`display_jobs`, administratorning `/api/displays` API va Elektron tablolar menyusi, hodisali çaqiruv/qayta çaqiruv/tozalaş integratsiyasi qöşildi. Portlar faqat Windows registrydan o‘qiladi, port oçilmaydi. `mock` SQLite’da simulyatsiya qiladi; `serial`, `tcp`, `agent` — tasdiqlanmagan va bloklangan. Bu uchalasining haqiqiy transport/agent kodi yozilmagan; ulaniş tuzilişi aniqlangandan keyingi bosqiçga qoldi.
+
+Haqiqiy EXEda apparatsiz oqim sinovi ötdi: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42176165897 . **windows-15** paketi shu sinov modulini öz ichiga oladi. Jismoniy LED tablosi sinalmagan. Kelgusi fizik protokol modulini amalga oşiriş hozir manba yetişmasligi sababli bloklangan.
