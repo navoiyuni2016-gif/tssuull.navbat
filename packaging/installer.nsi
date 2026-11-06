@@ -36,6 +36,7 @@ Section "TOShDOTAU (majburiy)" Main
   IntCmp $1 0 runtime_done
   MessageBox MB_OK "WebView2 Runtime ornatilmadi. Internet bilan WebView2Setup.exe ni oching. WEBVIEW2_RUNTIME.md yoriqnomasiga qarang."
   runtime_done:
+  CreateShortcut "$SMPROGRAMS\TOShDOTAU\Diagnostika.lnk" "$INSTDIR\TOShDOTAU.exe" "--diagnostics"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\TOShDOTAU" "DisplayName" "TOShDOTAU elektron navbat"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\TOShDOTAU" "UninstallString" '"$INSTDIR\Uninstall.exe"'

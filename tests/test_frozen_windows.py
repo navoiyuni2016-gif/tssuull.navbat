@@ -24,6 +24,13 @@ class FrozenWindows(unittest.TestCase):
             try:app.initialize('frozen-server-test-password-123')
             finally:app.DATA=previous
             environment=dict(os.environ,NAVBAT_DATA=str(root/'data'))
+            diagnostic=root/'printer-diagnostics.json'
+            diagnosed=subprocess.run([exe,'--diagnostics',str(diagnostic)],env=environment,timeout=60)
+            self.assertEqual(diagnosed.returncode,0)
+            report=json.loads(diagnostic.read_text(encoding='utf-8'))
+            self.assertFalse(report['physical_test_verified']);self.assertIsInstance(report['printers'],list)
+            self.assertTrue(report.get('account'),report);self.assertFalse(report['tests'])
+            with database.connect(root/'data'/'queue.db') as c:self.assertEqual(c.execute('SELECT count(*) FROM print_jobs').fetchone()[0],0)
             log=(root/'server.log').open('wb')
             server=subprocess.Popen([exe,'--server'],env=environment,stdout=log,stderr=log)
             try:

@@ -30,3 +30,5 @@ Birinçi yangi oçilişda `windows / KPOS_80 Printer(1) / 80 mm` boshlanğiç so
 Administrator → Sozlamalar → **Printer diagnostikasi**: Windows hisobi, Spooler, aniqlangan printer, drayver/port, oxirgi bosma holatlari. Tanlangan printerni yuqoridagi nom maydoniga ötkazib **Saqlaş**ni bosing. **Sinov çeki** navbat va hisobot statistikasiga kirmaydi. Haqiqiy qog‘ozni tekşirib, keyin kerak bölsa **shu çiptani qayta çop etiş**ni bosing.
 
 Holatlar: `preview → pending → printing → printed` yoki `failed`. Jarayon natijasi nomaʼlum bölgan uzilişda `uncertain` saqlanadi va avtomatik takrorlanmaydi. `printed` Windows spooleriga qabul qilinganini bildiradi — qog‘oz çiqqanining apparat tasdiği emas. Xato tafsiloti bazada va diagnostikada körinadi.
+
+Administrator oynasi oçilmasa ham Start → TOShDOTAU → **Diagnostika** orqali hisobot saqlaş mumkin. Bu rejim qog‘oz çiqarmaydi. Hisobotda Windows hisobi, Spooler, printer/drayver/port, mavjud xatolar, baza papkasi va WebView2 holati bor; login parollari va bosma tokenlari chiqarilmaydi.

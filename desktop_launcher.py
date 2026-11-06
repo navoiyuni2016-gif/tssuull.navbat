@@ -136,7 +136,7 @@ def self_test(destination):
 
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--server',action='store_true');parser.add_argument('--kiosk',action='store_true');parser.add_argument('--self-test');parser.add_argument('--manage',action='store_true');parser.add_argument('--view',choices=['admin','staff','tv']);parser.add_argument('--native-self-test')
+    parser=argparse.ArgumentParser();parser.add_argument('--server',action='store_true');parser.add_argument('--kiosk',action='store_true');parser.add_argument('--self-test');parser.add_argument('--manage',action='store_true');parser.add_argument('--view',choices=['admin','staff','tv']);parser.add_argument('--native-self-test');parser.add_argument('--diagnostics',nargs='?',const='auto')
     args=parser.parse_args()
     if args.self_test:raise SystemExit(self_test(args.self_test))
     if args.native_self_test:
@@ -144,6 +144,21 @@ def main():
         raise SystemExit(test_native(args.native_self_test))
     os.environ['NAVBAT_DATA']=str(data_directory())
     import app
+    if args.diagnostics:
+        import printer_adapter,native_window
+        if not has_admin(data_directory()):raise ValueError('Avval ilovani bir marta oçib administratorni yarating.')
+        app.initialize()
+        report=printer_adapter.diagnostics(app.connect,app.ROOT)
+        for job in report.get('jobs',[]):job.pop('ticket_request',None);job.pop('retry_key',None)
+        for test in report.get('tests',[]):test.pop('request',None)
+        report['data_directory']=str(app.DATA);report['webview2_available']=native_window.runtime_available()
+        destination=data_directory().parent/'printer-diagnostics.json' if args.diagnostics=='auto' else Path(args.diagnostics)
+        destination.write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+        if args.diagnostics=='auto':
+            import tkinter as tk
+            from tkinter import messagebox
+            root=tk.Tk();root.withdraw();messagebox.showinfo('Diagnostika','Hisobot saqlandi: '+str(destination)+'\nAvtomatik chek chiqarilmadi.',parent=root);root.destroy()
+        return
     if args.server:
         app.initialize()
         import printer_adapter
