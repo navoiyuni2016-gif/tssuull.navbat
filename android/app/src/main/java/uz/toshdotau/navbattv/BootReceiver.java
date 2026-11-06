@@ -7,7 +7,7 @@ import android.os.Build;
 
 public final class BootReceiver extends BroadcastReceiver {
     @Override public void onReceive(Context context,Intent intent) {
-        if(!Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction()))return;
+        if(!Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())&&!Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction()))return;
         if(!context.getSharedPreferences("tv",Context.MODE_PRIVATE).getBoolean("autostart",true))return;
         Intent home=new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
         ResolveInfo resolved=context.getPackageManager().resolveActivity(home,0);

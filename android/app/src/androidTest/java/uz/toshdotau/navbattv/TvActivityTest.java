@@ -51,6 +51,25 @@ public class TvActivityTest {
             }
         }
     }
+    @Test public void campusDefaultsApplyOncePreservePinAndAutostartHomeIntent() throws Exception {
+        Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        android.content.SharedPreferences prefs=context.getSharedPreferences("tv",Context.MODE_PRIVATE);
+        prefs.edit().clear().putString("server","http://192.168.1.10:8080").putBoolean("autostart",false).commit();
+        PinStore.save(prefs,"7432");
+        try(ActivityScenario<MainActivity> scenario=ActivityScenario.launch(MainActivity.class)){
+            scenario.onActivity(a->{
+                assertEquals("http://172.20.20.26:8080",a.server);assertTrue(a.prefs.getBoolean("autostart",false));
+                assertTrue(PinStore.matches(a.prefs,"7432"));
+                a.saveConfiguration("172.20.20.28:8080","","",true);
+            });
+            scenario.recreate();
+            scenario.onActivity(a->{assertEquals("http://172.20.20.28:8080",a.server);assertTrue(PinStore.matches(a.prefs,"7432"));});
+        }
+        android.content.Intent home=new android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_HOME).setPackage(context.getPackageName());
+        assertNotNull(context.getPackageManager().resolveActivity(home,0));
+        android.content.Intent boot=new android.content.Intent(android.content.Intent.ACTION_BOOT_COMPLETED).setPackage(context.getPackageName());
+        assertFalse(context.getPackageManager().queryBroadcastReceivers(boot,0).isEmpty());
+    }
     private static final class TinyServer implements AutoCloseable {
         final ServerSocket socket;final Thread thread;volatile boolean closed=false;
         TinyServer(int port) throws IOException {

@@ -2,6 +2,8 @@ package uz.toshdotau.navbattv;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.role.RoleManager;
+import android.os.Build;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -38,6 +40,8 @@ import android.widget.Toast;
 import java.io.ByteArrayInputStream;
 
 public class MainActivity extends Activity {
+    static final String DEFAULT_SERVER="http://172.20.20.26:8080";
+    static final String DEPLOYMENT_KEY="campus_172_20_20_26_v1";
     WebView web;
     TextView connection;
     SharedPreferences prefs;
@@ -60,7 +64,10 @@ public class MainActivity extends Activity {
             while((length=input.read(buffer))!=-1)out.write(buffer,0,length);
             compactCss=new String(out.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
         }catch(java.io.IOException ignored){}
-        prefs=getSharedPreferences("tv",MODE_PRIVATE);server=prefs.getString("server","");
+        prefs=getSharedPreferences("tv",MODE_PRIVATE);
+        // Apply this requested deployment once; later manual changes and PIN survive.
+        if(!prefs.getBoolean(DEPLOYMENT_KEY,false))prefs.edit().putString("server",DEFAULT_SERVER).putBoolean("autostart",true).putBoolean(DEPLOYMENT_KEY,true).apply();
+        server=prefs.getString("server",DEFAULT_SERVER);
         FrameLayout root=new FrameLayout(this);root.setBackgroundColor(Color.rgb(16,45,84));
         web=new WebView(this);root.addView(web,new FrameLayout.LayoutParams(-1,-1));
         connection=new TextView(this);connection.setTextColor(Color.WHITE);connection.setBackgroundColor(0xEE102D54);connection.setTextSize(20);connection.setPadding(24,18,24,18);connection.setGravity(Gravity.CENTER);
@@ -128,8 +135,8 @@ public class MainActivity extends Activity {
     }
     void showSettings(){
         if(settingsDialog!=null&&settingsDialog.isShowing())return;
-        LinearLayout box=form();TextView info=new TextView(this);info.setText("Server kompyuteri va X96 bir lokal tarmoqda bölsin.\n127.0.0.1 emas, kompyuterning lokal IP manzilini yozing.");box.addView(info);
-        EditText address=input(box,"Masalan: 192.168.1.10:8080",server,false);
+        LinearLayout box=form();TextView info=new TextView(this);info.setText("Infokiosk serveri: 172.20.20.26:8080. X96 manzili: 172.20.20.27.\nBox IPsi Android/routerda sozlanadi; bu maydonga server manzili yoziladi.");box.addView(info);
+        EditText address=input(box,"172.20.20.26:8080",server,false);
         EditText pin=input(box,prefs.contains("pin_hash")?"Yangi PIN (özgartirmaslik uçun böş qoldiring)":"Sozlamalar PINi (4–8 raqam)","",true);
         EditText confirm=input(box,"PINni takrorlang","",true);
         CheckBox boot=new CheckBox(this);boot.setText("Box yoqilganda avtomatik oçiş");boot.setChecked(prefs.getBoolean("autostart",true));box.addView(boot);
@@ -139,11 +146,21 @@ public class MainActivity extends Activity {
         settingsDialog.setCancelable(!server.isEmpty());settingsDialog.show();settingsDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         settingsDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v->{try{saveConfiguration(address.getText().toString(),pin.getText().toString(),confirm.getText().toString(),boot.isChecked());settingsDialog.dismiss();}catch(IllegalArgumentException error){address.setError(error.getMessage());}});
         settingsDialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v->{
-            try{startActivity(new Intent(server.isEmpty()?Settings.ACTION_SETTINGS:Settings.ACTION_HOME_SETTINGS));}
-            catch(RuntimeException error){try{startActivity(new Intent(Settings.ACTION_SETTINGS));}catch(RuntimeException ignored){Toast.makeText(this,"Android sozlamalarini tizim menyusidan oçing",Toast.LENGTH_LONG).show();}}
+            requestHomeRole();
         });
     }
+    void requestHomeRole(){
+        if(Build.VERSION.SDK_INT>=29){
+            RoleManager roles=(RoleManager)getSystemService(Context.ROLE_SERVICE);
+            if(roles!=null&&roles.isRoleAvailable(RoleManager.ROLE_HOME)&&!roles.isRoleHeld(RoleManager.ROLE_HOME)){
+                try{startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_HOME),410);return;}catch(RuntimeException ignored){}
+            }
+        }
+        try{startActivity(new Intent(Settings.ACTION_HOME_SETTINGS));}
+        catch(RuntimeException error){try{startActivity(new Intent(Settings.ACTION_SETTINGS));}catch(RuntimeException ignored){Toast.makeText(this,"Android Home sozlamalarini tizim menyusidan oçing",Toast.LENGTH_LONG).show();}}
+    }
     private void authenticate(){
+        if(!prefs.contains("pin_hash")){showSettings();return;}
         if(server.isEmpty()){showSettings();return;}
         if(pinDialog!=null&&pinDialog.isShowing())return;
         if(SystemClock.elapsedRealtime()<blockedUntil){Toast.makeText(this,"30 soniya kuting",Toast.LENGTH_SHORT).show();return;}

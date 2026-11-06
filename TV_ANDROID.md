@@ -7,9 +7,9 @@ Ilova Windows’dagi mavjud navbat serveriga lokal tarmoq orqali ulanadi. Alohid
 1. [TOShDOTAU-TV.apk](https://github.com/navoiyuni2016-gif/tssuull.navbat/raw/refs/heads/main/downloads/TOShDOTAU-TV.apk)ni yuklab oling. USB fleshka orqali X96ga köçiriş ham mumkin.
 2. X96 File Manager’da APKni oçing. Söralsa şu fayl menejeriga **Install unknown apps / Nomaʼlum manbadan örnatiş** ruxsatini bering, söng **Install**. Eski Android’da bu **Settings → Security → Unknown sources** bölişi mumkin. Örnatişdan keyin bu ruxsatni öçirib qöyiş mumkin.
 3. **TOŞDÖTAU TV** ilovasini oçing.
-4. **Server IP**: Windows kompyuterining lokal IPv4 manzilini yozing. Masalan, `192.168.1.10:8080`. Bu faqat misol: öz kompyuteringiz IP manzilini kiriting. `127.0.0.1`ni yozmang — u TV boxning özi.
-5. Sozlamalar uçun **4–8 raqamli PIN** yarating va takrorlang. Bu TV box sozlamalari PINi, serverdagi admin paroli emas.
-6. **Saqlaş**ni bosing. TV sahifasi töliq ekranda, manzil satrisiz oçiladi.
+4. Server **`http://172.20.20.26:8080`** qilib tayyorlangan; ilova darhol `/tv?autostart=1`ni oçadi. TV boxning **`172.20.20.27`** manzili server maydoniga yozilmaydi. Uni router DHCP reservation yoki X96 Ethernet/Wi-Fi sozlamasida belgilang; APK tizim IPsini özgartirmaydi.
+5. Pultda **MENU yoki BACK**ni bosing, birinçi martada sozlamalar oçiladi. Sozlamalar uçun **4–8 raqamli PIN** yarating va takrorlang. Bu TV box sozlamalari PINi, serverdagi admin paroli emas.
+6. **Saqlaş**ni bosing. Keyin MENU/BACK → PIN → **Android / Home sozlamalari** orqali ilovani standart Home qilib tanlang. TV sahifasi töliq ekranda, manzil satrisiz qoladi.
 
 Windows serverini ishga tuşiring. Windows va X96 bir routerga ulangan bölsin; Ethernet yoki Wi-Fi böladi. Windows firewall’da server ilovasiga **Private** lokal tarmoq uçun ruxsat bering. Server IP manzilini routerda doimiy qilib qöying. IP özgarsa MENU / BACK → PIN orqali yangilang.
 
@@ -47,3 +47,13 @@ Faqat private lokal IPv4 manzillari (10.*, 172.16–31.*, 192.168.*) qabul qilin
 ## Yig‘iş va imzo
 
 GitHub Android workflow Java/Gradle orqali APK yig‘adi; manzil tekşiruvlarini va Android emulatorda WebView, fullscreen, PIN, server qaytganda tiklaniş va gesturesiz audio ijrosini sinaydi. CI faqat imzosiz build ZIPni prerelease qiladi — uni örnatmang. Foydalanuvçi uçun `downloads/TOShDOTAU-TV.apk` haqiqiy alohida release kaliti bilan imzolangan nusxa. Maxfiy imzo kaliti GitHub’ga kiritilmaydi va keyingi yangilanişlar uçun xavfsiz saqlanişi kerak.
+
+
+## Universitetning hozirgi ulanişi
+
+- Infokiosk/server: **172.20.20.26:8080**. Windows ilovasi oçiq tursin.
+- X96/TV box: **172.20.20.27**. Bu manzil Android/routerda sozlanadi; APK server vazifasini bajarmaydi.
+- Ushbu yangilaniş birinçi oçilişda serverni 172.20.20.26ga va avtostartni yoqilgan holatga bir marta ötqazadi. Mavjud PIN saqlanadi. Keyin qölda özgартirilgan server manzili har oçilişda ustidan yozilmaydi.
+- Dizayn backenddan olinadi: hozirgi universitet logosi, moviy fon, yirik çipta, xizmat oynalari va kutayotganlar saqlanadi. APK faqat kichik/dense TV viewportda beshta oynani siğdiradi, yangi dizayn bilan almaştirmaydi.
+- **TOŞDÖTAU TV → Home/Launcher → Always** bir marta tanlansa, Android Home vazifasi orqali qayta yoqilişda TV ilovasi oçiladi. Android 10+da ilova tizimning bu tanlovini foydalanuvçi örniga yashirinça bajara olmaydi. Qurilma proşivkasidagi avtostart taqiği yoki Force stop mavjud bölsa, uni X96da tekşiring.
+- Android 10+da ilova Home rolini söraydigan tizim oynasini oçadi; eski Android’da Home sozlamasi oçiladi. Boot va APK yangilanişi hodisalari qöllanadi. Ilova Home bölsa doimiy ekran/brauzersiz rejim ishlar.
