@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "files": [
+    {
+      "name": "app.js",
+      "sha256": "ea201701a32b4f28447eeba0ed2b6eab4d40192439f394821fcf37106cca0ab8"
+    },
+    {
+      "name": "recordings.js",
+      "sha256": "b32a1299a7b493fe2c77d8fc8739fcac18289e3d257d70b39bd6c4c1e83ed31c"
+    }
+  ]
+}

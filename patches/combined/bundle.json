@@ -1,0 +1,32 @@
+{
+  "files": [
+    {
+      "path": "Update-All.ps1",
+      "sha256": "428ab001d1757aab4f949052094ac4532d0c5bdbd486e93443bcc76cd4631eec"
+    },
+    {
+      "path": "audio/Update-Audio.ps1",
+      "sha256": "6992bedddc8cd5749f230fa2cf2a9379d102440cbbe508562f4cd20a4cdfb458"
+    },
+    {
+      "path": "audio/manifest.json",
+      "sha256": "9eeeec08a1d87fc0bae5c30628c674246f4ee45e57277050c60a385aeaeb8545"
+    },
+    {
+      "path": "audio/web/app.js",
+      "sha256": "ea201701a32b4f28447eeba0ed2b6eab4d40192439f394821fcf37106cca0ab8"
+    },
+    {
+      "path": "audio/web/recordings.js",
+      "sha256": "b32a1299a7b493fe2c77d8fc8739fcac18289e3d257d70b39bd6c4c1e83ed31c"
+    },
+    {
+      "path": "receipt/Update-Receipt.ps1",
+      "sha256": "57d14b91bdbaee91e4d40da19f1e831d5e33a175caa3e12034183c6054a5c59e"
+    },
+    {
+      "path": "receipt/windows/print-ticket.ps1",
+      "sha256": "c12bb9d49735433795eac49ae748b83d1a3150eee19701484474e45d53a3ed1c"
+    }
+  ]
+}
