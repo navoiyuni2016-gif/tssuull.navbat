@@ -67,3 +67,5 @@ Server PCda ishlasa, ammo TVda fon/logotipning eski belgisi va «Aloqa uzildi» 
 Yangi APK serverdan kelgan `app.js` oldiga zarur moslik funksiyalarini o‘zi qo‘shadi (replaceChildren, fromEntries va Animation.finished). Backend kodini yoki CSPni o‘zgartirmaydi. Eski asset keshi bir marta tozalanadi; IP/PIN saqlanadi. Windows ilovasini qayta o‘rnatish talab qilinmaydi. MENU/BACK → sozlamalarda WebView user-agent va oxirgi JavaScript xatosi ko‘rinadi.
 
 Bu to‘liq Chromium yangilagichi emas. JavaScript sintaksisini umuman tushunmaydigan juda eski WebView bo‘lsa, Android System WebView’ni yangilash kerak bo‘ladi. Ilovaning moslik testi zamonaviy Android emulyatorida eski DOM imkoniyatlarini ataylab o‘chirib bajariladi; foydalanuvchining jismoniy X96ida qayta tekshiriladi.
+
+**Moslik yangilanishi 1.0.9:** fon ochilib, jadval/soat chiqmay qoladigan eski DOM holati uchun tuzatish qo‘shildi. APKni eski nusxa ustiga **Update / Yangilash** qilib o‘rnating, keyin ilovani qayta oching. IP, PIN va Home tanlovi saqlanadi; eski resurs keshi avtomatik yangilanadi. Serverdagi Windows ilovasi ishlashda davom etadi.

@@ -128,3 +128,17 @@ Tekşirilgan APK manbasi `bdd21bcf4f0023a47ba506ab9016d453c4ce21f7`, CI tag `and
 - Signed APK SHA256: `97a24fb81d8c101f9a2c6caa41964353ad56233b286408b84d35d0a1d954529c`. O‘rnatiladigan fayl: `downloads/TOShDOTAU-TV.apk`; CI’dagi unsigned ZIP o‘rnatish fayli emas.
 
 Jismoniy X96 power-cycle, OEM avtostart siyosati, 172.20.20.26dagi foydalanuvchi LAN/firewall va real karnay/HDMI apparati bu muhitda tekşirilmagan. **TOŞDÖTAU TV → Home/Launcher → Always**ni bir marta tanlab, X96ni o‘chirib-yoqib sinang. Yo‘riqnoma [TV_ANDROID.md](TV_ANDROID.md)da.
+
+## X96’da fon bor, jadval/soat yo‘q — Android 1.0.9 moslik tuzatishi
+
+Foydalanuvchi server `/api/health` javobi va PCda jonli TV ishlashini tasdiqladi. Mahalliy reproduksiyada Element.replaceChildren olib tashlanganda aynan bo‘sh main, «Aloqa uzildi» va `clock.replaceChildren is not a function` / `main.replaceChildren is not a function` xatolari olindi. Bu rasmga mos keladigan eski DOM imkoniyati muammosini ko‘rsatadi; qurilmaning aniq WebView versiyasi hali olinmagan.
+
+Tekshirilgan manba `21881adc7715aabfd15af4d5713f8f52439ea99d`, CI tag `android-build-9`. Android build/unit/emulyator workflow muvaffaqiyatli: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42202152835 .
+
+- APK ichidagi ES5 moslik asseti replaceChildren/fromEntries/Animation.finished bo‘lmasa taʼminlaydi; mavjud funksiyalarni almashtirmaydi. Serverning asosiy app.js resursi oldiga native intercept orqali qo‘shiladi. onPageFinisheddan keyingi kech yuklashga tayanmaydi.
+- `node tests/android_compat_browser.js`: uchta imkoniyat ataylab o‘chirilib, haqiqiy backend/CSP bilan dashboard, soat, logo, yangi A001 chaqiruvi va xatosiz ishlash tekshirildi. Backend va CSP o‘zgartirilmadi.
+- Haqiqiy Android 11/API30 WebView emulyatorida eski DOM imkoniyatlarini o‘chiruvchi skript → native compatibility → app.js ketma-ketligi COMPAT_OK bilan o‘tdi. Avvalgi fullscreen, PIN/IP migratsiyasi, offline recovery va autoplay audio sinovlari ham o‘tdi. Bu eski jismoniy X96 firmware sinovi emas.
+- Eski asset keshi bir marta yangilanadi; sozlama/PIN o‘chirilmaydi. Settingsda UA va oxirgi console JavaScript xatosi ko‘rsatiladi. Native yuklash bir configured origin, 5s timeout, 1MiB script chegarasi va redirectsiz ishlaydi; tashqi navigatsiya/SSL tekshiruvlari saqlandi.
+- APK 1.0.9 (versionCode 9), minSdk21. ZIP CRC, app ichidagi compatibility/CSS assetlari manbaga tengligi, v1/v2/v3 imzo va eski sertifikat bilan tengligi tekshirildi. SHA256: `0859236a0ad54bbc93a4b396e3826d94c6ed6ca5eb78a39edf0f38cf9a0dc462`.
+
+Windows EXEni qayta o‘rnatish shart emas: bu tuzatish APKda. Jismoniy X96ga yangilab o‘rnatib tekshirish qoladi. JavaScript sintaksisini umuman tushunmaydigan juda eski engine uchun to‘liq transpiler/Chromium bundli qo‘shilmadi; zaruratda Android System WebView yangilanadi. Bu cheklov «barcha Android WebView versiyalarida apparat sinovi o‘tdi» deb talqin qilinmasin.
