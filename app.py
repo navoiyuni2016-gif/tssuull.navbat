@@ -301,6 +301,11 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(self.rfile.read(size))
             if not isinstance(body,dict):
                 raise ValueError('JSON object required')
+            if self.path in ('/api/desktop/open-admin','/api/desktop/toggle-screen'):
+                control=getattr(self.server,'desktop_control',None)
+                if self.client_address[0] not in ('127.0.0.1','::1') or control is None:return self.send(403,{'error':'Local desktop only'})
+                (Path(control)/self.path.rsplit('/',1)[1]).write_text('request',encoding='ascii')
+                return self.send(200,{'ok':True})
             if self.path == '/api/logo':
                 try:
                     payload=base64.b64decode(body['content'],validate=True)
@@ -462,7 +467,7 @@ def main():
     run_server(args.host,args.port)
 
 
-def run_server(host,port,stop=None):
+def run_server(host,port,stop=None,desktop_control=None):
     import runtime
     with runtime.InstanceLock(DATA):
         if os.name=='nt':
@@ -472,6 +477,7 @@ def run_server(host,port,stop=None):
             except (OSError,ValueError,subprocess.SubprocessError) as exc:
                 logging.getLogger('navbat').warning('Printer avtomatik sozlanmadi: %s',exc)
         server=ThreadingHTTPServer((host,port),Handler)
+        server.desktop_control=desktop_control
         server.timeout=0.5
         log=RotatingFileHandler(DATA/'server.log',maxBytes=1024*1024,backupCount=3,encoding='utf-8')
         logger=logging.getLogger('navbat');logger.addHandler(log);logger.setLevel(logging.INFO)

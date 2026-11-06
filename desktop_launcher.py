@@ -53,16 +53,16 @@ def first_setup(directory):
 
 class ServerSession:
     """One owned server, stopped and joined before releasing its database lock."""
-    def __init__(self,directory,port=8080):
+    def __init__(self,directory,port=8080,desktop_control=None):
         import threading
-        self.directory=directory;self.port=port;self.stop=threading.Event();self.thread=None;self.error=None
+        self.directory=directory;self.port=port;self.desktop_control=desktop_control;self.stop=threading.Event();self.thread=None;self.error=None
     def start(self):
         import socket,threading,app,printer_adapter
         with socket.socket() as sock:
             if sock.connect_ex(('127.0.0.1',self.port))==0:raise RuntimeError('8080 port band. Eski app.py yoki TOShDOTAU serverini avval yoping.')
         app.initialize();printer_adapter.apply_kiosk_preset(app.connect)
         def serve():
-            try:app.run_server('0.0.0.0',self.port,self.stop)
+            try:app.run_server('0.0.0.0',self.port,self.stop,self.desktop_control)
             except Exception as exc:self.error=exc
         self.thread=threading.Thread(target=serve,name='navbat-owned-server');self.thread.start()
         for _ in range(100):
@@ -89,13 +89,15 @@ def gui(manage=False):
             hwnd=ctypes.windll.user32.FindWindowW(None,native_window.TITLE)
             if hwnd:ctypes.windll.user32.ShowWindow(hwnd,9);ctypes.windll.user32.SetForegroundWindow(hwnd)
         return
-    session=ServerSession(directory);children=[];stop_file=control/'close-views'
+    session=ServerSession(directory,desktop_control=control);children=[];stop_file=control/'close-views'
     try:
         if not native_window.runtime_available():raise RuntimeError('Microsoft Edge WebView2 Runtime topilmadi. Setup.exe orqali örnating; WEBVIEW2_RUNTIME.md yöriqnomasi ham mavjud.')
         if not first_setup(directory):return
         stop_file.unlink(missing_ok=True);(control/'open-admin').unlink(missing_ok=True)
         session.start()
         def admin():
+            children[:]=[child for child in children if child.poll() is None]
+            if children:return
             environment=dict(os.environ,NAVBAT_CLOSE_FILE=str(stop_file))
             with (directory/'desktop-ui.log').open('ab') as log:
                 children.append(subprocess.Popen(launch_command('--view','admin'),env=environment,stdout=log,stderr=log,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0)))

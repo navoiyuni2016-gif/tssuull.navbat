@@ -54,21 +54,20 @@ def run_view(base,role='terminal',open_admin=None,close_file=None,request_file=N
     webview.settings['ALLOW_FILE_URLS']=False
     webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER']=False
     webview.settings['IGNORE_SSL_ERRORS']=False
-    window_box={}
-    class Controls:
-        def open_admin(self):
-            if open_admin:open_admin()
-            return True
-        def toggle_fullscreen(self):window_box['window'].toggle_fullscreen();return True
-    window=webview.create_window(TITLE,base+ROUTES[role],js_api=Controls(),fullscreen=role=='terminal',width=1280,height=800,min_size=(800,600),background_color='#102D54')
-    window_box['window']=window
+    window=webview.create_window(TITLE,base+ROUTES[role],fullscreen=role=='terminal',width=1280,height=800,min_size=(800,600),background_color='#102D54')
     ending=threading.Event()
     def closing():
-        if role=='terminal' and smoke is None and not authorize_exit(window.native):return False
+        if role=='terminal' and smoke is None:
+            try:
+                if not authorize_exit(window.native):return False
+            except Exception:
+                import logging
+                logging.getLogger('navbat').exception('Administrator exit authentication failed')
+                return False
         ending.set();return True
     window.events.closing+=closing
     def loaded():
-        if role=='terminal':window.evaluate_js("document.addEventListener('keydown',function(e){if(e.key==='F10'){e.preventDefault();window.pywebview.api.open_admin()}if(e.key==='F11'){e.preventDefault();window.pywebview.api.toggle_fullscreen()}})")
+        if role=='terminal':window.run_js("document.addEventListener('keydown',function(e){if(e.key==='F10'){e.preventDefault();fetch('/api/desktop/open-admin',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})}if(e.key==='F11'){e.preventDefault();fetch('/api/desktop/toggle-screen',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'})}})")
     window.events.loaded+=loaded
     def monitor():
         if smoke:
@@ -80,6 +79,8 @@ def run_view(base,role='terminal',open_admin=None,close_file=None,request_file=N
             if request_file and Path(request_file).exists():
                 Path(request_file).unlink(missing_ok=True)
                 if open_admin:open_admin()
+            if request_file and Path(request_file).with_name('toggle-screen').exists():
+                Path(request_file).with_name('toggle-screen').unlink(missing_ok=True);window.toggle_fullscreen()
     icon=Path(__file__).with_name('university.ico')
     webview.start(monitor,gui='edgechromium',debug=False,private_mode=True,icon=str(icon) if icon.is_file() else None)
     ending.set()
