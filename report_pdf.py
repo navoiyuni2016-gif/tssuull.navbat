@@ -88,6 +88,7 @@ class PDF:
     def text(self,x,y,text,size=10,color=(.06,.16,.29)):
         self.commands.append(f'{color[0]} {color[1]} {color[2]} rg BT /F1 {size} Tf 1 0 0 1 {x:.2f} {y:.2f} Tm <{self.font.encode(text)}> Tj ET')
     def box(self,x,y,w,h,fill):self.commands.append(f'{fill[0]} {fill[1]} {fill[2]} rg {x:.2f} {y:.2f} {w:.2f} {h:.2f} re f')
+    def cell_border(self,x,y,w,h):self.commands.append(f'0 0 0 RG .5 w {x:.2f} {y:.2f} {w:.2f} {h:.2f} re S')
     def line(self,x,y,w,color=(.8,.86,.91)):self.commands.append(f'{color[0]} {color[1]} {color[2]} RG .5 w {x} {y} m {x+w} {y} l S')
     def image(self,data,x,y,size):
         try:self.logo=png_rgb_alpha(data)

@@ -189,3 +189,9 @@ Yangilangan xizmat örnatgichi loyiha ichidagi eski bazani/loginlarni/ovozlarni 
 ## Windows ilovasi (.exe)
 
 Python/PowerShellsiz oson ishga tuşiriş uçun GitHub **Releases** ichidagi `TOShDOTAU-Setup.exe`. Örnatiş, eski bazani köçiriş, printer va Startup: **[EXE_BOSHLASH.md](EXE_BOSHLASH.md)**. EXE alohida Windows runnerida yig‘ilib, haqiqiy paket sinovi ötgaç tarqatiladi. Birinçi oçilişda parol ilova oynasida yaratiladi.
+
+## Yangilangan hisobotlar va LED tayyorgarligi
+
+Hisobotlarda kutiş va xizmat vaqti **minutda**. Har bir bölim va xodim uçun **Jami xizmat körsatilgan** — yakunlangan çiptalar soni; hali xizmat körsatmaganlar 0 bilan körsatiladi. XLSX, DOCX va PDF bir xil maʼlumot/ustunlar, oq fon va qora katakçali jadvallarni saqlaydi. Hisobot davri çipta yaratilgan kunga qarab olinadi.
+
+Administrator → **Elektron tablolar** apparatsiz sinov, oyna/ID/manzil sozlamalari va vazifa jurnalini beradi. Operator çaqiruvi, qayta çaqiruv va yakunlaş tegişli oynaning sinov tablosiga ötadi. Haqiqiy COM/IP/agent transporti **bloklangan**: ishlab çiqaruvçi protokoli hali tasdiqlanmagan. Tablodagi xato operator/TVni töxtatmaydi. [Birinçi bosqiç dalillari va keyingi integratsiya rejasi](LED_TEXNIK_TAHLIL.md).

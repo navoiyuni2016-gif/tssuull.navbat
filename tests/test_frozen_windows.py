@@ -34,7 +34,7 @@ class FrozenWindows(unittest.TestCase):
             log=(root/'server.log').open('wb')
             server=subprocess.Popen([exe,'--server'],env=environment,stdout=log,stderr=log)
             try:
-                opener=urllib.request.build_opener(urllib.request.ProxyHandler({}));ready=False
+                opener=urllib.request.build_opener(urllib.request.ProxyHandler({}),urllib.request.HTTPCookieProcessor());ready=False
                 for _ in range(100):
                     try:
                         with opener.open('http://127.0.0.1:8080/api/health',timeout=1) as response:
@@ -50,6 +50,22 @@ class FrozenWindows(unittest.TestCase):
                 payload=json.dumps({'service':1,'request':'frozen-http-ticket-request-123'}).encode()
                 request=urllib.request.Request('http://127.0.0.1:8080/api/tickets',data=payload,headers={'Content-Type':'application/json'})
                 with opener.open(request,timeout=5) as response:self.assertEqual(json.load(response)['label'],'A001')
+                def post(path,body):
+                    request=urllib.request.Request('http://127.0.0.1:8080/api/'+path,data=json.dumps(body).encode(),headers={'Content-Type':'application/json'})
+                    with opener.open(request,timeout=5) as response:return json.load(response)
+                post('login',{'name':'admin','password':'frozen-server-test-password-123'})
+                post('displays',{'window':1,'device_address':'1','transport':'mock','endpoint':'','enabled':True})
+                post('action',{'action':'next'})
+                for _ in range(30):
+                    with opener.open('http://127.0.0.1:8080/api/displays',timeout=5) as response:display=json.load(response)
+                    if display['jobs'] and display['jobs'][0]['status']=='simulated':break
+                    time.sleep(.2)
+                self.assertFalse(display['protocol_verified'])
+                self.assertEqual(display['devices'][0]['last_value'],'A001')
+                self.assertEqual(display['jobs'][0]['status'],'simulated')
+                with opener.open('http://127.0.0.1:8080/api/reports',timeout=5) as response:report=json.load(response)
+                self.assertIn('average_wait_minutes',report);self.assertEqual(report['served'],0)
+
             finally:
                 if server.poll() is None:server.terminate()
                 server.wait(timeout=15);log.close()

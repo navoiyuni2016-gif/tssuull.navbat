@@ -42,3 +42,10 @@ Yangi native oyna, WebView2 örnatişi, yangilaş va diagnostika: **[WEBVIEW2_RU
 Har bir bölimning öz harfi bor: dastlab beshta xizmatga A, B, C, D, E beriladi. Administrator → Xizmatlar → **Bölim harfi** orqali 1–3 katta lotin harfini kiriting va saqlang. Bir xil prefiks ikki bölimga berilmaydi. Avval çiqarilgan çiptalar özgarmaydi. Raqamlar avvalgidek umumiy ketma-ketlikda: A001, B002, C003; raqamlaşning kunlik/uzluksiz sozlamasi saqlanadi.
 
 Yozib olingan ovoz rejimida yangi B, C, D, E harflari uçun ham ovoz fayllarini Administrator → Ovozlar orqali yuklang. Yetishmayotgan yozuvlar shu yerda körsatiladi. TV/X96 ilovasini yangilanişdan keyin qayta oçing.
+
+
+## Hisobotlar va elektron tablolar
+
+Hisobot kutiş/xizmat vaqtlarini minutda, har bir bölim va xodimning yakunlangan xizmatlar jamisini körsatadi. XLSX/DOCX/PDFda oq fondagi qora katakçali jadvallar bor; 0 natijali bölim/xodimlar ham çiqadi. Sana oralig‘i avvalgidek çipta yaratilgan kunga tegishli.
+
+Administrator → **Elektron tablolar**: oyna, ID, ulaniş manzili va apparatsiz sinov. **Hozir faqat simulyator işlaydi**; u heç bir portga yozmaydi. COM/IP/agent sozlamasini saqlaş mumkin, lekin haqiqiy LED protokoli tasdiqlanmaganligi uçun yuboriş bloklanadi. `simulated` — apparatsiz sinov, jismoniy tablo emas. [Texnik dalillar va keyingi bosqiç](LED_TEXNIK_TAHLIL.md).

@@ -122,7 +122,9 @@ def action(user, operation, ticket=None, service=None):
                 if not c.execute('SELECT 1 FROM services WHERE id=? AND enabled=1',(service,)).fetchone():
                     raise ValueError('Yo‘naltiriladigan xizmatni tanlang')
                 c.execute("UPDATE tickets SET service=?,status='waiting',window=NULL,user=NULL,called=NULL,started=NULL WHERE id=?",(service,ticket))
-                c.execute("INSERT INTO events(ticket,operation,user,service,window,created) VALUES (?,'transfer',?,?,?,?)",(ticket,user['name'],service,window,now()))
+                event=c.execute("INSERT INTO events(ticket,operation,user,service,window,created) VALUES (?,'transfer',?,?,?,?)",(ticket,user['name'],service,window,now()))
+                import display_adapter
+                display_adapter.enqueue_event(c,event.lastrowid,window,'transfer',active['label'])
                 return dict(c.execute('SELECT * FROM tickets WHERE id=?',(ticket,)).fetchone())
             target = {'start': ('called','serving','started'), 'finish': ('serving','done','finished'), 'absent': ('called','absent','finished')}
             if operation in target:
@@ -134,7 +136,9 @@ def action(user, operation, ticket=None, service=None):
                 raise ValueError('Noma’lum amal')
         if operation in ('next','recall'):
             c.execute('INSERT INTO calls(ticket,window,created,service) VALUES (?,?,?,?)', (active['id'],window,now(),active['service']))
-        c.execute('INSERT INTO events(ticket,operation,user,service,window,created) VALUES (?,?,?,?,?,?)',(active['id'],operation,user['name'],active['service'],window,now()))
+        event=c.execute('INSERT INTO events(ticket,operation,user,service,window,created) VALUES (?,?,?,?,?,?)',(active['id'],operation,user['name'],active['service'],window,now()))
+        import display_adapter
+        display_adapter.enqueue_event(c,event.lastrowid,window,operation,active['label'])
         return dict(c.execute('SELECT * FROM tickets WHERE id=?', (active['id'],)).fetchone())
 
 class Handler(BaseHTTPRequestHandler):
@@ -226,6 +230,11 @@ class Handler(BaseHTTPRequestHandler):
                 for row in c.execute('SELECT name,role,window,enabled FROM users'):
                     item=dict(row);item['services']=[r[0] for r in c.execute('SELECT service FROM permissions WHERE user=?',(row['name'],))];users.append(item)
                 return self.send(200,{'settings':management.settings(c),'services':[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,prefix,enabled FROM services')],'windows':[dict(r) for r in c.execute('SELECT * FROM windows')],'users':users})
+        if self.path == '/api/displays':
+            u=self.user()
+            if not u or u['role']!='admin':return self.send(403,{'error':'Administrator login required'})
+            import display_adapter
+            with connect() as c:return self.send(200,display_adapter.state(c))
         if self.path == '/api/audio':
             with connect() as c:
                 return self.send(200, {'files':audio_store.manifest(c)})
@@ -291,7 +300,7 @@ class Handler(BaseHTTPRequestHandler):
         if (origin and origin != 'http://' + self.headers.get('Host','')) or self.headers.get('Content-Type') != 'application/json':
             return self.send(403,{'error':'Same-origin JSON required'})
         try:
-            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update','/api/printer/test'):
+            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update','/api/printer/test','/api/displays','/api/displays/command'):
                 u = self.user()
                 if not u or u['role'] != 'admin':
                     return self.send(403,{'error':'Administrator login required'})
@@ -316,6 +325,13 @@ class Handler(BaseHTTPRequestHandler):
                 if not mime:raise ValueError('PNG yoki JPEG rasm tanlang')
                 with connect() as c:c.execute('INSERT OR REPLACE INTO branding VALUES (1,?,?)',(payload,mime))
                 return self.send(200,{'ok':True})
+            if self.path in ('/api/displays','/api/displays/command'):
+                import display_adapter
+                with connect() as c:
+                    c.execute('BEGIN IMMEDIATE')
+                    if self.path=='/api/displays':display_adapter.save(c,body);result={'ok':True}
+                    else:result={'job':display_adapter.command(c,body)}
+                return self.send(200,result)
             if self.path == '/api/printer/test':
                 request=body.get('request','')
                 if not isinstance(request,str) or not 16<=len(request)<=100:raise ValueError('Diagnostika request identifikatori kerak')
@@ -486,6 +502,8 @@ def run_server(host,port,stop=None,desktop_control=None):
         log=RotatingFileHandler(DATA/'server.log',maxBytes=1024*1024,backupCount=3,encoding='utf-8')
         logger=logging.getLogger('navbat');logger.addHandler(log);logger.setLevel(logging.INFO)
         worker=printer_adapter.Worker(connect,DATA,ROOT);worker.start()
+        import display_adapter
+        displays=display_adapter.Worker(connect);displays.start()
         shutdown=stop or threading.Event()
         server.stop_event=shutdown
         backup_thread=runtime.start_backups(connect,DATA,shutdown)
@@ -496,7 +514,7 @@ def run_server(host,port,stop=None,desktop_control=None):
             else:
                 while not stop.is_set():server.handle_request()
         finally:
-            shutdown.set();server.server_close();worker.close();backup_thread.join(timeout=3);logger.removeHandler(log);log.close()
+            shutdown.set();server.server_close();worker.close();displays.close();backup_thread.join(timeout=3);logger.removeHandler(log);log.close()
 
 if __name__ == '__main__':
     try:

@@ -19,7 +19,15 @@ const {chromium}=require('playwright');const {spawn}=require('node:child_process
     await second.locator('input[pattern]').fill('B');await second.getByRole('button',{name:'Saqlaş',exact:true}).click();
     await page.waitForFunction(async()=>((await (await fetch('/api/state')).json()).services.find(s=>s.id===2).prefix)==='B');
     await page.getByRole('button',{name:'Xodimlar',exact:true}).click();await page.getByRole('heading',{name:'Xodimlar va ruxsatlar'}).waitFor();
+    await page.getByRole('button',{name:'Elektron tablolar',exact:true}).click();
+    const displayForm=page.locator('form').filter({has:page.getByRole('heading',{name:'1-oyna',exact:true})});
+    await displayForm.getByLabel('Faol',{exact:true}).check();await displayForm.getByRole('button',{name:'Saqlaş',exact:true}).click();
+    await page.getByRole('button',{name:'Test raqam yuboriş',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Test raqam yuboriş',exact:true}).click();
+    await page.getByText('Sinov rejimi — haqiqiy qurilma ulanmagan',{exact:true}).waitFor();
+    const displays=await (await context.request.get(base+'/api/displays')).json();assert.equal(displays.protocol_verified,false);assert.equal(displays.jobs[0].value,'A025');
     await page.getByRole('button',{name:'Hisobotlar',exact:true}).click();await page.getByText('Çiqarilgan çiptalar',{exact:true}).waitFor();
+    await page.getByText('Örtaça kutiş (minut)',{exact:true}).waitFor();assert.equal(await page.locator('.report-table').first().locator('tbody tr').count(),5);assert.equal(await page.locator('.report-table th').first().evaluate(e=>getComputedStyle(e).borderTopColor),'rgb(0, 0, 0)');
     await page.getByRole('button',{name:'Ovozlar',exact:true}).click();
     // Valid short PCM WAV fixture; never represented as a spoken production recording.
     const wav=Buffer.alloc(44+1600);wav.write('RIFF',0);wav.writeUInt32LE(wav.length-8,4);wav.write('WAVEfmt ',8);wav.writeUInt32LE(16,16);wav.writeUInt16LE(1,20);wav.writeUInt16LE(1,22);wav.writeUInt32LE(8000,24);wav.writeUInt32LE(16000,28);wav.writeUInt16LE(2,32);wav.writeUInt16LE(16,34);wav.write('data',36);wav.writeUInt32LE(1600,40);

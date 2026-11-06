@@ -183,7 +183,7 @@ async function staffData(data){
 async function admin(){
   let data;try{data=await api('admin')}catch{login();return}
   heading('Administrator paneli');const menu=el('div');menu.className='admin-tabs';const panel=el('section');panel.id='admin-panel';
-  for(const [key,label] of [['audio','Ovozlar'],['settings','Sozlamalar'],['services','Xizmatlar'],['windows','Oynalar'],['users','Xodimlar'],['reports','Hisobotlar']]){const tab=button(label,async()=>{menu.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));tab.classList.add('active');panel.replaceChildren();data=await api('admin');await adminSection(key,data,panel);},menu);tab.className='tab'+(key==='audio'?' active':'');tab.prepend(icon(key));}
+  for(const [key,label] of [['audio','Ovozlar'],['settings','Sozlamalar'],['services','Xizmatlar'],['windows','Oynalar'],['displays','Elektron tablolar'],['users','Xodimlar'],['reports','Hisobotlar']]){const tab=button(label,async()=>{menu.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));tab.classList.add('active');panel.replaceChildren();data=await api('admin');await adminSection(key,data,panel);},menu);tab.className='tab'+(key==='audio'?' active':'');tab.prepend(icon(key));}
   const exit=button('Chiqish',async()=>{await api('logout',{});login()},menu);exit.className='ghost admin-exit';exit.prepend(icon('logout'));
   await audioAdmin(panel);
 }
@@ -252,6 +252,32 @@ async function adminSection(key,data,panel){
 
     }
   }
+  if(key==='displays'){
+    el('h2','Elektron tablolar',panel);
+    el('p','Hozir faqat apparatsiz sinov ishlaydi. Haqiqiy LED protokoli tasdiqlanmagan; COM/IP/agentga buyruq yuborilmaydi.',panel);
+    const d=await api('displays');
+    el('p','Windows portlari: '+(d.discovery.serial_ports.join(', ')||'Topilmadi')+'. Port topilishi LED aniqlanganini bildirmaydi.',panel).className='technical';
+    const reload=async()=>{panel.replaceChildren();await adminSection('displays',await api('admin'),panel)};
+    for(const w of data.windows){
+      const saved=d.devices.find(v=>v.window===w.id);
+      const f=el('form',undefined,panel);f.className='card form-grid';el('h3',w.id+'-oyna',f);
+      el('p',!saved?'Sozlanmagan':saved.status==='simulation'?'Sinov rejimi — haqiqiy qurilma ulanmagan':saved.status==='disabled'?'O‘chirilgan':'Bloklangan — protokol tasdiqlanmagan',f);
+      const address=field(f,'Qurilma ID manzili','text',saved?.device_address||String(w.id));address.maxLength=64;
+      const transport=choice(f,'Ulanish turi',[['mock','Apparatsiz sinov'],['serial','COM — bloklangan'],['tcp','IP — bloklangan'],['agent','Operator agenti — bloklangan']],saved?.transport||'mock');
+      const endpoint=field(f,'COM port / IP / agent manzili','text',saved?.endpoint||'');endpoint.maxLength=200;endpoint.className='technical';
+      const on=field(f,'Faol','checkbox');on.checked=!!saved?.enabled;
+      submitForm(f,async()=>{await api('displays',{window:w.id,device_address:address.value,transport:transport.value,endpoint:endpoint.value,enabled:on.checked});await reload()});
+      if(saved){
+        el('p','Oxirgi sinov qiymati: '+(saved.last_value??'—'),f).className='technical';
+        const value=field(f,'Sinov raqami','text','A025');value.maxLength=12;
+        button('Test raqam yuborish',async()=>{await api('displays/command',{device:saved.id,operation:'show',value:value.value});await reload()},f);
+        button('Tabloni tozalash',async()=>{await api('displays/command',{device:saved.id,operation:'clear'});await reload()},f);
+      }
+    }
+    const log=el('section',undefined,panel);log.className='card';el('h3','Tablo vazifalari',log);
+    for(const j of d.jobs)el('p','#'+j.id+' · '+j.operation+' · '+j.value+' · '+j.status+(j.error?' — '+j.error:''),log).className='technical';
+    button('Holatni yangilash',reload,panel);
+  }
   if(key==='reports'){
     el('h2','Hisobotlar',panel);const f=el('form',undefined,panel);f.className='report-filters';
     const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Tashkent',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(p=>[p.type,p.value]));const today=parts.year+'-'+parts.month+'-'+parts.day;
@@ -265,14 +291,14 @@ async function adminSection(key,data,panel){
     const show=async()=>{
       const r=await api('reports?start='+start.value+'&end='+end.value);result.replaceChildren();
       const kpis=el('div',undefined,result);kpis.className='report-kpis';
-      for(const [label,value] of [['Chiqarilgan chiptalar',r.issued],['Yakunlangan chiptalar',r.done],['Kelmaganlar',r.absent],['Hozir kutayotganlar',r.waiting],['O‘rtacha kutish (soniya)',r.average_wait_seconds??'—'],['O‘rtacha xizmat (soniya)',r.average_service_seconds??'—']]){const card=el('div',undefined,kpis);el('span',label,card);el('strong',String(value),card);}
+      for(const [label,value] of [['Chiqarilgan chiptalar',r.issued],['Jami xizmat ko‘rsatilgan',r.served],['Kelmaganlar',r.absent],['Hozir kutayotganlar',r.waiting],['O‘rtacha kutish (minut)',r.average_wait_minutes??'—'],['O‘rtacha xizmat (minut)',r.average_service_minutes??'—']]){const card=el('div',undefined,kpis);el('span',label,card);el('strong',String(value),card);}
       for(const [group,label] of [['services','Bo‘limlar kesimida'],['employees','Operatorlar kesimida']]){
-        const card=el('section',undefined,result);card.className='card report-table';el('h3',label,card);const table=el('table',undefined,card);const head=el('tr',undefined,el('thead',undefined,table));['Nomi','Chiqarilgan','Yakunlangan','Kelmagan','O‘rt. kutish (s)','O‘rt. xizmat (s)'].forEach(t=>el('th',t,head));const body=el('tbody',undefined,table);
-        for(const [key,b] of Object.entries(r[group])){const row=el('tr',undefined,body);const name=group==='services'?data.services.find(s=>s.id===Number(key))?.name||key:key==='unassigned'?'Biriktirilmagan':key;[name,b.issued,b.done,b.absent,b.average_wait_seconds??'—',b.average_service_seconds??'—'].forEach((v,i)=>{const td=el('td',String(v),row);if(i===0&&group==='employees')td.className='technical'});}
+        const card=el('section',undefined,result);card.className='card report-table';el('h3',label,card);const table=el('table',undefined,card);const head=el('tr',undefined,el('thead',undefined,table));['Nomi','Chiqarilgan','Jami xizmat ko‘rsatilgan','Kelmagan','O‘rt. kutish (min)','O‘rt. xizmat (min)'].forEach(t=>el('th',t,head));const body=el('tbody',undefined,table);
+        for(const [key,b] of Object.entries(r[group])){const row=el('tr',undefined,body);const name=group==='services'?data.services.find(s=>s.id===Number(key))?.name||key:key==='unassigned'?'Biriktirilmagan':key;[name,b.issued,b.done,b.absent,b.average_wait_minutes??'—',b.average_service_minutes??'—'].forEach((v,i)=>{const td=el('td',String(v),row);if(i===0&&group==='employees')td.className='technical'});}
         if(!Object.keys(r[group]).length){const cell=el('td','Bu davr uchun ma’lumot yo‘q',el('tr',undefined,body));cell.colSpan=6;}
       }
       links.forEach(a=>{a.href='/api/reports/export?format='+a.dataset.format+'&start='+encodeURIComponent(start.value)+'&end='+encodeURIComponent(end.value);a.setAttribute('aria-disabled','false');});
-      hint.textContent='Davr: '+start.value+' — '+end.value+'. Kutish va xizmat vaqti soniyada. Barcha formatlarda bir xil ma’lumot yuklanadi.';
+      hint.textContent='Davr: '+start.value+' — '+end.value+'. Kutish va xizmat vaqti minutda. Jami xizmat — yakunlangan chiptalar. Barcha formatlarda bir xil ma’lumot yuklanadi.';
     };
     submitForm(f,show);f.querySelector('button[type=submit]').textContent='Hisobotni ko‘rsatish';await show();
   }

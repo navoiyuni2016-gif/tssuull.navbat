@@ -61,6 +61,8 @@ def migrate(c):
   if translated!=row['name']:c.execute('UPDATE services SET name=? WHERE id=?',(translated,row['id']))
  university=c.execute("SELECT value FROM settings WHERE key='university'").fetchone()
  if university:c.execute("UPDATE settings SET value=? WHERE key='university'",(json.dumps(alphabet.text(json.loads(university[0])),ensure_ascii=False),))
+ import display_adapter
+ display_adapter.migrate(c)
  c.execute('PRAGMA user_version=3')
 
 def unused_prefix(used):
@@ -122,6 +124,9 @@ def report(c,start,end):
  if start>end:raise ValueError('Invalid date range')
  rows=c.execute('SELECT * FROM tickets WHERE day BETWEEN ? AND ? ORDER BY id',(start,end)).fetchall()
  result={'issued':len(rows),'done':0,'absent':0,'waiting':0,'services':{},'employees':{}}
+ def bucket():return {'issued':0,'done':0,'absent':0,'waits':[],'durations':[]}
+ result['services']={str(r['id']):bucket() for r in c.execute('SELECT id FROM services ORDER BY id')}
+ result['employees']={r['name']:bucket() for r in c.execute("SELECT name FROM users WHERE role='staff' ORDER BY name")}
  waits=[];durations=[]
  for row in rows:
   wait=(dt.datetime.fromisoformat(row['called'])-dt.datetime.fromisoformat(row['created'])).total_seconds() if row['called'] else None
@@ -136,7 +141,9 @@ def report(c,start,end):
   for key,state in [('done','done'),('absent','absent'),('waiting','waiting')]:result[key]+=row['status']==state
  def average(items):return round(sum(items)/len(items),1) if items else None
  result['average_wait_seconds']=average(waits);result['average_service_seconds']=average(durations)
+ result['average_wait_minutes']=average([v/60 for v in waits]);result['average_service_minutes']=average([v/60 for v in durations]);result['served']=result['done']
  for group in (result['services'],result['employees']):
   for bucket in group.values():
+   bucket['average_wait_minutes']=average([v/60 for v in bucket['waits']]);bucket['average_service_minutes']=average([v/60 for v in bucket['durations']]);bucket['served']=bucket['done']
    bucket['average_wait_seconds']=average(bucket.pop('waits'));bucket['average_service_seconds']=average(bucket.pop('durations'))
  return result

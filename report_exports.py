@@ -10,9 +10,9 @@ from report_pdf import PDF
 
 ROOT=Path(__file__).parent
 APP='TOŞDÖTAU — elektron navbat tizimi'
-HEADERS=['Bölim / operator','Çiqarilgan','Yakunlangan','Kelmagan','Ört. kutiş (s)','Ört. xizmat (s)']
-RULES='Kutiş: yaratilgandan oxirgi xizmat çaqiruvigaça. Xizmat: oxirgi bosqişda boşlaşdan yakunlaşgaça. Örtaça qiymatlar soniyada; maʼlumot bölmasa —. Yönaltirilgan çipta bir marta sanaladi.'
-BLUE='102D54';GREEN='008B49';LIGHT='EDF4FA'
+HEADERS=['Bölim / operator','Çiqarilgan','Jami xizmat körsatilgan','Kelmagan','Ört. kutiş (min)','Ört. xizmat (min)']
+RULES='Kutiş: yaratilgandan oxirgi xizmat çaqiruvigaça. Xizmat: oxirgi bosqişda boşlaşdan yakunlaşgaça. Örtaça vaqtlar minutda; jami xizmat körsatilgan — faqat yakunlangan çiptalar; maʼlumot bölmasa —. Yönaltirilgan çipta bir marta sanaladi.'
+BLUE='000000';GREEN='000000';LIGHT='FFFFFF'
 
 def clean(value):
     return ''.join(ch for ch in str(value) if ch in '\t\n\r' or ord(ch)>=32)
@@ -28,9 +28,9 @@ def snapshot(c,start,end,*,sample=False):
         rows=[]
         for name,bucket in report[key].items():
             label=names.get(name,name) if key=='services' else 'Biriktirilmagan' if name=='unassigned' else name
-            rows.append([label,bucket['issued'],bucket['done'],bucket['absent'],bucket['average_wait_seconds'],bucket['average_service_seconds']])
+            rows.append([label,bucket['issued'],bucket['done'],bucket['absent'],bucket['average_wait_minutes'],bucket['average_service_minutes']])
         groups.append((title,rows))
-    summary=[('Çiqarilgan çiptalar',report['issued']),('Yakunlangan çiptalar',report['done']),('Kelmaganlar',report['absent']),('Hozir kutayotganlar',report['waiting']),('Örtaça kutiş (soniya)',report['average_wait_seconds']),('Örtaça xizmat (soniya)',report['average_service_seconds'])]
+    summary=[('Çiqarilgan çiptalar',report['issued']),('Jami xizmat körsatilgan',report['served']),('Kelmaganlar',report['absent']),('Hozir kutayotganlar',report['waiting']),('Örtaça kutiş (minut)',report['average_wait_minutes']),('Örtaça xizmat (minut)',report['average_service_minutes'])]
     logo_row=c.execute('SELECT content,mime FROM branding WHERE id=1').fetchone()
     logo=bytes(logo_row['content']) if logo_row and logo_row['mime']=='image/png' else None
     default=ROOT/'web'/'assets'/'university-logo.png'
@@ -46,7 +46,7 @@ def zip_bytes(files):
 
 def xlsx(data):
     files={};ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main';relations='http://schemas.openxmlformats.org/officeDocument/2006/relationships'
-    styles='''<styleSheet xmlns="%s"><fonts count="3"><font><sz val="11"/><name val="Calibri"/><color rgb="FF173353"/></font><font><sz val="19"/><name val="Calibri"/><b/><color rgb="FF102D54"/></font><font><sz val="11"/><name val="Calibri"/><b/><color rgb="FFFFFFFF"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF102D54"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEDF4FA"/></patternFill></fill></fills><borders count="2"><border/><border><bottom style="thin"><color rgb="FFD8E4F0"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="5"><xf fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="2" fillId="2" borderId="0" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="2" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" horizontal="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'''%ns
+    styles='''<styleSheet xmlns="%s"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0"/></numFmts><fonts count="3"><font><sz val="11"/><name val="Calibri"/><color rgb="FF000000"/></font><font><sz val="19"/><name val="Calibri"/><b/><color rgb="FF000000"/></font><font><sz val="11"/><name val="Calibri"/><b/><color rgb="FF000000"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/></patternFill></fill></fills><borders count="2"><border/><border><left style="thin"><color rgb="FF000000"/></left><right style="thin"><color rgb="FF000000"/></right><top style="thin"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="6"><xf fontId="0" fillId="0" borderId="1" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="1" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="2" fillId="2" borderId="1" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf><xf numFmtId="1" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" horizontal="center"/></xf><xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment vertical="center" horizontal="center"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'''%ns
     files['xl/styles.xml']=styles
     sheets=[('Umumiy',None),('Bölimlar',data['groups'][0][1]),('Operatorlar',data['groups'][1][1])]
     sheet_xml=[];book_rels=[];overrides=[];defined=[]
@@ -61,13 +61,13 @@ def xlsx(data):
         cell(6,0,('NAMUNA — SINOV MAʼLUMOTLARI | ' if data['sample'] else '')+name,2);merges.append('A6:F6')
         if rows is None:
             for r,(label,value) in enumerate(data['summary'],7):
-                cell(r,0,label,3);cell(r,4,value,4);merges.extend([f'A{r}:D{r}',f'E{r}:F{r}']);heights[r]=29
+                cell(r,0,label,3);cell(r,4,value,5 if r>=11 else 4);merges.extend([f'A{r}:D{r}',f'E{r}:F{r}']);heights[r]=29
             cell(15,0,RULES);merges.append('A15:F17');heights[15]=50;end=17
         else:
             for col,label in enumerate(HEADERS):cell(7,col,label,2)
             heights[7]=37
             for r,row in enumerate(rows,8):
-                for col,value in enumerate(row):cell(r,col,value,0 if col==0 else 4)
+                for col,value in enumerate(row):cell(r,col,value,0 if col==0 else 5 if col>=4 else 4)
                 heights[r]=max(28,16*((len(str(row[0]))//55)+1))
             end=max(8,len(rows)+7)
             if not rows:cell(8,0,'Bu davr uçun maʼlumot yo‘q');merges.append('A8:F8')
@@ -92,12 +92,12 @@ def docx(data):
     w='http://schemas.openxmlformats.org/wordprocessingml/2006/main';r='http://schemas.openxmlformats.org/officeDocument/2006/relationships'
     def paragraph(text,size=22,bold=False,color=BLUE):return f'<w:p><w:pPr><w:spacing w:after="120"/><w:keepNext/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="{size}"/><w:color w:val="{color}"/>'+('<w:b/>' if bold else '')+'</w:rPr><w:t xml:space="preserve">'+x(text)+'</w:t></w:r></w:p>'
     def table(rows,widths,header=True):
-        out='<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:bottom w:val="single" w:sz="4" w:color="D8E4F0"/><w:insideH w:val="single" w:sz="4" w:color="D8E4F0"/></w:tblBorders><w:tblCellMar><w:top w:w="90" w:type="dxa"/><w:bottom w:w="90" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>'+''.join(f'<w:gridCol w:w="{n}"/>' for n in widths)+'</w:tblGrid>'
+        out='<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="000000"/><w:left w:val="single" w:sz="4" w:color="000000"/><w:bottom w:val="single" w:sz="4" w:color="000000"/><w:right w:val="single" w:sz="4" w:color="000000"/><w:insideH w:val="single" w:sz="4" w:color="000000"/><w:insideV w:val="single" w:sz="4" w:color="000000"/></w:tblBorders><w:tblCellMar><w:top w:w="90" w:type="dxa"/><w:bottom w:w="90" w:type="dxa"/><w:left w:w="100" w:type="dxa"/><w:right w:w="100" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid>'+''.join(f'<w:gridCol w:w="{n}"/>' for n in widths)+'</w:tblGrid>'
         for i,row in enumerate(rows):
             out+='<w:tr><w:trPr><w:cantSplit/>'+('<w:tblHeader/>' if header and i==0 else '')+'</w:trPr>'
             for col,value in enumerate(row):
-                background=BLUE if header and i==0 else 'F0F5FA' if i%2 else 'FFFFFF'
-                out+=f'<w:tc><w:tcPr><w:tcW w:w="{widths[col]}" w:type="dxa"/><w:shd w:fill="{background}"/></w:tcPr><w:p><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="19"/><w:color w:val="'+('FFFFFF' if header and i==0 else BLUE)+'"/>'+('<w:b/>' if header and i==0 else '')+'</w:rPr><w:t xml:space="preserve">'+x(number(value))+'</w:t></w:r></w:p></w:tc>'
+                background='FFFFFF'
+                out+=f'<w:tc><w:tcPr><w:tcW w:w="{widths[col]}" w:type="dxa"/><w:shd w:fill="{background}"/></w:tcPr><w:p><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="19"/><w:color w:val="'+BLUE+'"/>'+('<w:b/>' if header and i==0 else '')+'</w:rPr><w:t xml:space="preserve">'+x(number(value))+'</w:t></w:r></w:p></w:tc>'
             out+='</w:tr>'
         return out+'</w:tbl>'
     logo=''
@@ -128,43 +128,37 @@ def pdf(data):
     document=PDF((ROOT/'fonts'/'DejaVuSans.ttf').read_bytes());y=0
     def header():
         nonlocal y
-        document.new_page();document.box(0,514,842,81,(.055,.15,.29))
-        if data['logo']:
-            document.box(40,527,54,54,(1,1,1));document.image(data['logo'],41,528,52)
+        document.new_page()
+        if data['logo']:document.image(data['logo'],40,527,52)
         left=107 if data['logo'] else 40
         lines=document.font.wrap(data['university'],842-left-40,12)
-        for n,line in enumerate(lines[:2]):document.text(left,566-n*15,line,12,(1,1,1))
-        document.text(left,526,APP,11,(.76,.86,.98));document.text(40,492,'ELEKTRON NAVBAT HISOBOTI',18)
-        document.text(40,475,f"Davr: {data['start']} — {data['end']} | Tayyorlandi: {data['generated']} (UTC+5)",9,(.36,.46,.56));y=449
-        if data['sample']:document.text(40,y,'NAMUNA — SINOV MAʼLUMOTLARI',10,(0,.5,.25));y-=23
+        for n,line in enumerate(lines[:2]):document.text(left,566-n*15,line,12,(0,0,0))
+        document.text(left,526,APP,11,(0,0,0));document.text(40,492,'ELEKTRON NAVBAT HISOBOTI',18,(0,0,0))
+        document.text(40,475,f"Davr: {data['start']} — {data['end']} | Tayyorlandi: {data['generated']} (UTC+5)",9,(0,0,0));y=449
+        if data['sample']:document.text(40,y,'NAMUNA — SINOV MAʼLUMOTLARI',10,(0,0,0));y-=23
     def section(title):
         nonlocal y
         if y<100:header()
-        document.text(40,y,title,13);y-=20
+        document.text(40,y,title,13,(0,0,0));y-=20
     def table(rows,widths,repeat=None):
         nonlocal y
-        for index,row in enumerate(rows):
+        for row in rows:
             wrapped=[document.font.wrap(number(v),widths[i]-14,9) for i,v in enumerate(row)]
             height=max(len(lines) for lines in wrapped)*12+16
             if y-height<45:
                 header()
                 if repeat:table([repeat],widths)
-            is_head=index==0 and repeat is not None
-            document.box(40,y-height,sum(widths),height,(.06,.18,.33) if is_head else (.94,.96,.98) if index%2 else (1,1,1))
             left=40
             for i,lines in enumerate(wrapped):
-                for n,line in enumerate(lines):document.text(left+7,y-17-n*12,line,9,(1,1,1) if is_head else (.08,.18,.31))
+                document.cell_border(left,y-height,widths[i],height)
+                for n,line in enumerate(lines):document.text(left+7,y-17-n*12,line,9,(0,0,0))
                 left+=widths[i]
-            document.line(40,y-height,sum(widths));y-=height
+            y-=height
         y-=24
     header();section('Umumiy natijalar')
-    top=y
-    for index,(label,value) in enumerate(data['summary']):
-        col=index%3;row=index//3;left=40+col*259;bottom=top-row*118-102
-        document.box(left,bottom,244,102,(.93,.96,.98));document.box(left,bottom,244,3,(0,.53,.27))
-        document.text(left+15,bottom+75,label,10,(.34,.45,.57));document.text(left+15,bottom+27,number(value),27)
-    y=top-252;section('Hisoblaş qoidalari')
-    for line in document.font.wrap(RULES,762,9):document.text(40,y,line,9,(.39,.47,.56));y-=13
+    table([['Körsatkiç','Natija']]+data['summary'],[520,242],['Körsatkiç','Natija'])
+    section('Hisoblaş qoidalari')
+    for line in document.font.wrap(RULES,762,9):document.text(40,y,line,9,(0,0,0));y-=13
     for title,rows in data['groups']:
         header();section(title);table([HEADERS]+(rows or [['Maʼlumot yo‘q','—','—','—','—','—']]),[302,65,75,70,125,125],HEADERS)
     return document.bytes()
