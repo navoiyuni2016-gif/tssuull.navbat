@@ -1,4 +1,4 @@
-$ErrorActionPreference='Stop'
+﻿$ErrorActionPreference='Stop'
 $path=Join-Path $PSScriptRoot '../windows/print-ticket.ps1'
 $tokens=$null;$errors=$null
 $ast=[Management.Automation.Language.Parser]::ParseFile($path,[ref]$tokens,[ref]$errors)
@@ -16,3 +16,16 @@ $rejected=$false
 try { Get-ReceiptBounds 315 550 0 0 30 550 0 0 } catch { $rejected=$true }
 if (-not $rejected) { throw 'Invalid driver area not rejected' }
 Write-Output 'PASS receipt bounds: 80mm and 58mm, narrow head, hardware margins, invalid area, PowerShell parser'
+$split=$ast.Find({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Split-ReceiptLines'},$true)
+Invoke-Expression $split.Extent.Text
+$name="Alisher Navoiy nomidagi Toshkent davlat o‘zbek tili va adabiyoti universiteti"
+$measure={param($text) $text.Length}
+$lines=@(Split-ReceiptLines $name 55 $measure)
+if (($lines -join ' ') -cne $name) { throw 'University characters lost during wrapping' }
+if (($lines -join ' ') -notmatch "o‘zbek tili") { throw 'Final k lost' }
+foreach($text in @('Ташкентский государственный университет узбекского языка и литературы','Alisher Navo''i Tashkent State University of Uzbek Language and Literature',('W'*80),"o‘zbek",'áb́ć')) {
+ $lines=@(Split-ReceiptLines $text 12 $measure)
+ foreach($line in $lines) { if ($line.Length -gt 12) { throw 'Text line overflow' } }
+ if (($lines -join '' -replace '\s','') -cne ($text -replace '\s','')) { throw 'Unicode text changed' }
+}
+Write-Output "PASS explicit line wrapping: complete o‘zbek, RU/EN, long words, Unicode text elements"

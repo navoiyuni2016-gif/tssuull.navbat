@@ -7,6 +7,8 @@ import alphabet
 
 DEFAULTS = {
  'university':alphabet.text('Alisher Navoiy nomidagi Toshkent davlat o‘zbek tili va adabiyoti universiteti'),
+ 'university_ru':'Ташкентский государственный университет узбекского языка и литературы имени Алишера Навои',
+ 'university_en':"Alisher Navo'i Tashkent State University of Uzbek Language and Literature",
  'prefix':'A','daily_reset':True,'open':'00:00','close':'23:59','weekdays':[0,1,2,3,4,5,6],
  'printer_mode':'html','printer_name':'','paper_width_mm':80,'idle_seconds':60,'tv_rows':8,
 }
@@ -95,12 +97,20 @@ def repair_printer_settings(c):
 
 def settings(c):return {r['key']:json.loads(r['value']) for r in c.execute('SELECT * FROM settings')}
 
+def university_names(config):
+ return {'uz':config['university'],'ru':config.get('university_ru') or DEFAULTS['university_ru'],'en':config.get('university_en') or DEFAULTS['university_en']}
+
+def university_name(config,lang='uz'):
+ return university_names(config).get(lang,config['university'])
+
 def save_settings(c,body):
  if not isinstance(body,dict) or set(body)-set(DEFAULTS):raise ValueError('Unknown setting')
  body=dict(body)
  if 'university' in body:body['university']=alphabet.text(body['university'])
  merged=settings(c)|body
  if not isinstance(merged['university'],str) or not 3<=len(merged['university'])<=300:raise ValueError('Universitet nomi 3–300 belgi')
+ for key in ('university_ru','university_en'):
+  if not isinstance(merged[key],str) or not 3<=len(merged[key])<=300:raise ValueError('Universitet tarjimasi 3–300 belgi')
  if not isinstance(merged['prefix'],str) or not re.fullmatch('[A-Z]{1,3}',merged['prefix']):raise ValueError('Prefiks: 1–3 katta lotin harfi')
  if type(merged['daily_reset']) is not bool:raise ValueError('Invalid numbering rule')
  for key in ('open','close'):

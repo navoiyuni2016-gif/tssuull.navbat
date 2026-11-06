@@ -1,0 +1,12 @@
+{
+  "files": [
+    {
+      "path": "web/app.js",
+      "sha256": "b974b4792dfb3c45c4cde53cf2be54274a82b3a5d9cb81452fded7d90542b33d"
+    },
+    {
+      "path": "windows/print-ticket.ps1",
+      "sha256": "5536aa31db3b4aad5cedc76955234c526936b3640b204fb3896c186de5bc3b09"
+    }
+  ]
+}

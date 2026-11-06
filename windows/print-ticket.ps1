@@ -1,4 +1,4 @@
-﻿param([Parameter(Mandatory=$true)][string]$TicketFile)
+﻿param([Parameter(Mandatory=$true)][string]$TicketFile,[switch]$InspectOnly)
 $ErrorActionPreference='Stop'
 [Console]::OutputEncoding=[Text.Encoding]::UTF8
 $phase='validate';$doc=$null
@@ -13,9 +13,50 @@ function Get-ReceiptBounds {
   if($right-$left -lt 40 -or $bottom-$top -lt 40){throw 'Printer bosma maydoni juda kichik. Windows qogoz olchamini tekshiring.'}
   @{X=[single]($left-$HardMarginX);Y=[single]($top-$HardMarginY);Width=[single]($right-$left);Height=[single]($bottom-$top)}
 }
+function Split-ReceiptLines {
+  param([string]$Text,[double]$Width,[scriptblock]$Measure)
+  $lines=New-Object 'Collections.Generic.List[string]'
+  $current=''
+  foreach($word in @($Text -split '\s+' | Where-Object { $_ })) {
+    $candidate=if($current){$current+' '+$word}else{$word}
+    if ((& $Measure $candidate) -le $Width) { $current=$candidate;continue }
+    if ($current) { $lines.Add($current);$current='' }
+    # Split an unusually long word by Unicode text element, never discard a glyph.
+    $elements=[Globalization.StringInfo]::GetTextElementEnumerator($word)
+    while($elements.MoveNext()) {
+      $glyph=[string]$elements.Current
+      if ((& $Measure $glyph) -gt $Width) { throw 'Bitta belgi bosma maydoniga sigmadi' }
+      if ($current -and (& $Measure ($current+$glyph)) -gt $Width) { $lines.Add($current);$current='' }
+      $current+=$glyph
+    }
+  }
+  if($current){$lines.Add($current)}
+  if(($lines.ToArray() -join '' -replace '\s','') -cne ($Text -replace '\s','')) { throw 'Bosma satrlarida belgi yoqoldi' }
+  $lines.ToArray()
+}
+function Write-ReceiptTrace([string]$Name,$Value) {
+  $directory=Join-Path (Split-Path -Parent $TicketFile) 'print-diagnostics'
+  $null=[IO.Directory]::CreateDirectory($directory)
+  [IO.File]::WriteAllText((Join-Path $directory $Name),($Value|ConvertTo-Json -Depth 10),(New-Object Text.UTF8Encoding($false)))
+}
+function Draw-ReceiptText {
+  param($Graphics,$Font,$Format,[string]$Text,[single]$X,[single]$Width,[ref]$Y,$Trace)
+  $available=[single]($Width-8)
+  $measure={param($value) $Graphics.MeasureString([string]$value,$Font,(New-Object Drawing.SizeF(10000,10000)),$Format).Width}
+  $lines=@(Split-ReceiptLines -Text $Text -Width $available -Measure $measure)
+  $Trace.Add(@{text=$Text;lines=$lines;width=$available})
+  foreach($line in $lines) {
+    $size=$Graphics.MeasureString([string]$line,$Font,(New-Object Drawing.SizeF(10000,10000)),$Format)
+    $height=[single]($size.Height+4)
+    $Graphics.DrawString([string]$line,$Font,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF(($X+4),$Y.Value,$available,$height)),$Format)
+    $Y.Value=[single]($Y.Value+$height)
+  }
+  $Y.Value=[single]($Y.Value+8)
+}
+
+function Invoke-ReceiptPrint {
 try {
   Add-Type -AssemblyName System.Drawing
-  $t=Get-Content -LiteralPath $TicketFile -Raw -Encoding UTF8 | ConvertFrom-Json
   if((Get-Service Spooler).Status -ne 'Running'){throw 'Windows Print Spooler ishlamayapti'}
   $doc=New-Object Drawing.Printing.PrintDocument
   $doc.PrinterSettings.PrinterName=[string]$t.printer
@@ -32,23 +73,22 @@ try {
   $handler=[Drawing.Printing.PrintPageEventHandler]{param($sender,$event)
     $normal=New-Object Drawing.Font('Arial',10)
     $large=New-Object Drawing.Font('Arial',36,[Drawing.FontStyle]::Bold)
-    $format=New-Object Drawing.StringFormat;$format.Alignment=[Drawing.StringAlignment]::Center
+    $format=[Drawing.StringFormat]::GenericTypographic.Clone();$format.Alignment=[Drawing.StringAlignment]::Center;$format.FormatFlags=$format.FormatFlags -bor [Drawing.StringFormatFlags]::NoWrap;$format.Trimming=[Drawing.StringTrimming]::None
     try {
       $event.Graphics.PageUnit=[Drawing.GraphicsUnit]::Display
       $area=$event.PageSettings.PrintableArea
       $bounds=Get-ReceiptBounds -PageWidth $event.PageBounds.Width -PageHeight $event.PageBounds.Height -PrintableLeft $area.Left -PrintableTop $area.Top -PrintableWidth $area.Width -PrintableHeight $area.Height -HardMarginX $event.PageSettings.HardMarginX -HardMarginY $event.PageSettings.HardMarginY
       $x=[single]$bounds.X;$y=[single]$bounds.Y;$w=[single]$bounds.Width
-      $layout=New-Object Drawing.SizeF($w,10000)
+      $trace=New-Object 'Collections.Generic.List[object]'
       foreach($line in @($t.university,$t.service)) {
-        $size=$event.Graphics.MeasureString([string]$line,$normal,$layout,$format)
-        $event.Graphics.DrawString([string]$line,$normal,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF($x,$y,$w,($size.Height+6))),$format)
-        $y+=$size.Height+10
+        Draw-ReceiptText $event.Graphics $normal $format ([string]$line) $x $w ([ref]$y) $trace
       }
-      $event.Graphics.DrawString([string]$t.label,$large,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF($x,$y,$w,65)),$format);$y+=70
+      Draw-ReceiptText $event.Graphics $large $format ([string]$t.label) $x $w ([ref]$y) $trace
       foreach($line in @([string]$t.created,([string]$t.ahead_label+': '+$t.ahead))) {
-        $size=$event.Graphics.MeasureString($line,$normal,$layout,$format)
-        $event.Graphics.DrawString($line,$normal,[Drawing.Brushes]::Black,(New-Object Drawing.RectangleF($x,$y,$w,($size.Height+6))),$format);$y+=$size.Height+8
+        Draw-ReceiptText $event.Graphics $normal $format $line $x $w ([ref]$y) $trace
       }
+      Write-ReceiptTrace 'last-layout.json' @{university=[string]$t.university;lang=$t.lang;bounds=$bounds;hard_margin_x=$event.PageSettings.HardMarginX;hard_margin_y=$event.PageSettings.HardMarginY;printable_area=@{x=$area.X;y=$area.Y;width=$area.Width;height=$area.Height};rows=$trace.ToArray()}
+      if($y -gt $bounds.Y+$bounds.Height){throw 'Chek balandligi yetarli emas; matn kesilmasligi uchun bosma toxtatildi'}
       $event.HasMorePages=$false
     } finally {$normal.Dispose();$large.Dispose();$format.Dispose()}
   }
@@ -65,3 +105,32 @@ try {
   @{ok=$false;stage=$phase;error=$_.Exception.Message;type=$_.Exception.GetType().FullName;code=$_.Exception.HResult}|ConvertTo-Json -Compress
   exit 1
 } finally {if($doc){$doc.Dispose()}}
+
+}
+try {
+  $t=Get-Content -LiteralPath $TicketFile -Raw -Encoding UTF8 | ConvertFrom-Json
+  $diagnosticDirectory=Join-Path (Split-Path -Parent $TicketFile) 'print-diagnostics'
+  $null=[IO.Directory]::CreateDirectory($diagnosticDirectory)
+  $inputHash=(Get-FileHash -LiteralPath $TicketFile -Algorithm SHA256).Hash
+  [IO.File]::Copy($TicketFile,(Join-Path $diagnosticDirectory 'last-input.json'),$true)
+  $inputUniversity=[string]$t.university
+  $legacy=-not ($t.PSObject.Properties.Name -contains 'lang')
+  $lang=if($legacy){switch([string]$t.ahead_label){'Перед вами в очереди'{'ru'} 'People ahead'{'en'} default{'uz'}}}else{[string]$t.lang}
+  if($lang -notin @('uz','ru','en')){throw 'Chipta tili notogri'}
+  $namesFile=Join-Path $PSScriptRoot 'university-names.json'
+  if($legacy -and (Test-Path -LiteralPath $namesFile)) {
+    $names=Get-Content -LiteralPath $namesFile -Raw -Encoding UTF8|ConvertFrom-Json
+    if(-not $names.$lang){throw 'Universitet tarjimasi topilmadi'}
+    $t.university=[string]$names.$lang
+  }
+  $t|Add-Member -NotePropertyName lang -NotePropertyValue $lang -Force
+  Write-ReceiptTrace 'last-effective.json' $t
+  # The legacy EXE omits lang; normalize its private job file before GDI reads it.
+  [IO.File]::WriteAllText($TicketFile,($t|ConvertTo-Json -Depth 10),(New-Object Text.UTF8Encoding($false)))
+  Write-ReceiptTrace 'last-text-check.json' @{input_sha256=$inputHash;input_university=$inputUniversity;effective_university=[string]$t.university;lang=$lang;legacy_payload=$legacy;input_characters=@($inputUniversity.ToCharArray()|ForEach-Object{@{character=[string]$_;codepoint=[int]$_}})}
+  if($InspectOnly){@{ok=$true;stage='inspect';printed=$false}|ConvertTo-Json -Compress;exit 0}
+  Invoke-ReceiptPrint
+} catch {
+  @{ok=$false;stage="validate";error=$_.Exception.Message}|ConvertTo-Json -Compress
+  exit 1
+}

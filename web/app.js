@@ -25,14 +25,16 @@ function audioPrefixes(){const active=(state?.services||[]).map(s=>s.prefix).fil
 function audioWindows(){return state?.windows?.map(w=>w.id)||[1,2,3,4,5];}
 function recordingSlot(name){const m=String(name).match(/^([sp])([a-z]+|[0-9]+)\.(wav|mp3)$/i);if(!m)return null;if(m[1].toLowerCase()==='p'){const n=Number(m[2]);return Number.isInteger(n)&&n>=1&&n<=100?'window_'+n:null}if(/^[a-z]{1,3}$/i.test(m[2]))return 'prefix_'+m[2].toUpperCase();const n=Number(m[2]);return n===0?'digit_0':Number.isInteger(n)&&n>=1&&n<=9999?'number_'+n:null}
 const copy=key=>terminalCopy[lang][key];
+const universityTranslations={ru:'Ташкентский государственный университет узбекского языка и литературы имени Алишера Навои',en:"Alisher Navo'i Tashkent State University of Uzbek Language and Literature"};
+function universityName(){return state?.university_names?.[lang]||(lang==='uz'?state?.university:universityTranslations[lang])||state?.university||'';}
 function updateBrand(){
  if(!state)return;
  document.body.dataset.customBackground=String(!!state.custom_background);
  document.querySelector('.seal').classList.toggle('has-logo',!!state.custom_logo);
  document.querySelector('#university').textContent=APP_TITLE;
- document.querySelector('.seal').title=state.university;
+ document.querySelector('.seal').title=universityName();
  document.querySelector('footer span:not(#connection)').textContent=isTV()?'Navbatingizni ekranda kuzatib boring':'Universitet elektron navbat tizimi';
- document.querySelector('#brand-subtitle').textContent=state.university;
+ document.querySelector('#brand-subtitle').textContent=universityName();
 }
 
 const referralDrafts=new Map();
@@ -203,6 +205,7 @@ async function adminSection(key,data,panel){
   if(key==='settings'){
     const f=el('form',undefined,panel);f.className='card form-grid settings-form';el('h2','Universitet va tizim sozlamalari',f);const c=data.settings;
     const fields={university:field(f,'Universitet nomi','text',c.university),open:field(f,'Ish boshlanishi','time',c.open),close:field(f,'Ish tugashi','time',c.close),printer_name:field(f,'Windows printer nomi','text',c.printer_name),paper_width_mm:field(f,'Qog‘oz kengligi (mm)','number',c.paper_width_mm),idle_seconds:field(f,'Bosh sahifaga qaytish (soniya)','number',c.idle_seconds),tv_rows:field(f,'TVda chaqiruvlar soni','number',c.tv_rows)};
+    for(const [key,label] of [['university_ru','Universitet nomi (RU)'],['university_en','Universitet nomi (EN)']])if(key in c)fields[key]=field(f,label,'text',c[key]);
     const serviceCodes=field(f,'Bo‘lim harflari','text',(data.services||[]).map(s=>s.prefix).join(' / '));serviceCodes.readOnly=true;
     const numbering=choice(f,'Raqamlash',[['daily','Har kuni yangidan'],['continuous','Uzluksiz']],c.daily_reset?'daily':'continuous');
     const printer=choice(f,'Printer rejimi',[['html','Brauzer / PDF sinov rejimi'],['windows','Windows drayveri orqali dialogsiz']],c.printer_mode);

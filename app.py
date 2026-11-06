@@ -223,7 +223,7 @@ class Handler(BaseHTTPRequestHandler):
             with connect() as c:
                 row=c.execute('SELECT tickets.*,services.name AS service_name,services.name_ru AS service_name_ru,services.name_en AS service_name_en FROM tickets JOIN services ON services.id=tickets.service WHERE request=?',(query.get('request',[''])[0],)).fetchone()
                 if not row:return self.send(404,{'error':'Chipta topilmadi'})
-                payload=printer_adapter.preview(row,printer_adapter.service_name(row),management.settings(c)['university'])
+                payload=printer_adapter.preview(row,printer_adapter.service_name(row),management.university_name(management.settings(c),row['lang']))
             return self.binary(payload.encode(),'text/html; charset=utf-8')
         if parsed.path in ('/api/admin','/api/reports'):
             u = self.user()
@@ -291,7 +291,7 @@ class Handler(BaseHTTPRequestHandler):
                 queue=[dict(r) for r in c.execute("SELECT id,number,label,service FROM tickets WHERE status='waiting' ORDER BY id LIMIT 5")]
                 window_calls=[dict(r) for r in c.execute("SELECT calls.id,tickets.label,tickets.number,calls.window,calls.service,services.name AS service_name FROM calls JOIN tickets ON tickets.id=calls.ticket JOIN services ON services.id=calls.service WHERE calls.id IN (SELECT max(id) FROM calls GROUP BY window) ORDER BY calls.window")]
                 waiting = c.execute("SELECT count(*) FROM tickets WHERE status='waiting'").fetchone()[0]
-                self.send(200,dict(university=config['university'],custom_background=any((ROOT/'web'/'assets'/name).is_file() for name in ('campus-background.png','campus-background.jpg','campus-background.jpeg')),custom_logo=bool(c.execute('SELECT 1 FROM branding WHERE id=1').fetchone()) or (ROOT/'web'/'assets'/'university-logo.png').is_file(),settings={k:config[k] for k in ('prefix','idle_seconds','tv_rows','printer_mode')},services=[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,prefix,enabled FROM services WHERE enabled=1')],calls=[dict(r) for r in calls],window_calls=window_calls,queue=queue,waiting=waiting))
+                self.send(200,dict(university=config['university'],university_names=management.university_names(config),custom_background=any((ROOT/'web'/'assets'/name).is_file() for name in ('campus-background.png','campus-background.jpg','campus-background.jpeg')),custom_logo=bool(c.execute('SELECT 1 FROM branding WHERE id=1').fetchone()) or (ROOT/'web'/'assets'/'university-logo.png').is_file(),settings={k:config[k] for k in ('prefix','idle_seconds','tv_rows','printer_mode')},services=[dict(r) for r in c.execute('SELECT id,name,name_ru,name_en,prefix,enabled FROM services WHERE enabled=1')],calls=[dict(r) for r in calls],window_calls=window_calls,queue=queue,waiting=waiting))
             return
         if self.path == '/api/work':
             u = self.user()
