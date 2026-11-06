@@ -85,3 +85,18 @@ Tekşirilgan manba `fdf47ddd8b6bf20f0281b54dd6dd55380ec94981`, release **windows
 - Frozen Windows EXE API orqali sinov tablosi sozlandi, operator A001ni çaqirdi va alohida worker vazifani **simulated** holatiga ötkazdi. Shu paketda haqiqiy WebView2/F10/admin login sinovi ham ötdi.
 
 Haqiqiy LED protokoli topilmadi; bu apparat muvaffaqiyati emas. Hech qanday COM/IP/RF buyruq taxminan yuborilmadi; serial/tcp/agent transportlari bloklangan. Ishlab çiqaruvçi modeli, manzil, frame/checksum, ACK va prefiks imkoniyati tasdiqlanmagan. Eski fayllar inventari va keyingi bosqiç [LED_TEXNIK_TAHLIL.md](LED_TEXNIK_TAHLIL.md)da. KPOS/LED/X96 foydalanuvçi qurilmasi sinovi va Word/Excel dasturlarida vizual print-preview bu muhitda bajarilmadi.
+
+## Muammoli murojaatlar va yangi LED dalillari — 2026-11-06
+
+Manba `5a8b198805c8d4826c2942f887dc352256c5e8cb`, release **windows-16**. Windows workflow barcha bosqiçlarda ötdi: https://github.com/navoiyuni2016-gif/tssuull.navbat/actions/runs/42180054307 .
+
+- `python -m unittest discover -s tests -q`: 55 test, 53 ötgan, 2 frozen-only skip. Windows runnerida qayta shu manba testlari va keyin haqiqiy frozen EXEning ikkita testi ham ötdi.
+- Barcha beshta operatorning izoh bilan admin referral yuborişi; izohsiz/begona çiptani rad etiş; takroriy sörov bitta murojaat/LED hodisasi/bosma vazifasi saqlaşi; operator oynasi böşashi; referred çiptani qayta oddiy navbatga çaqirib bölmasligi ötdi.
+- Faqat administrator yakuniy natija saqlashi, majburiy natija izohi, aynan bir xil retry natijani takrorlamasligi, yakuniy yozuvni tasodifan almashtirişi bloklanishi va tarix saqlanişi tekşirildi. Hal qilingan xizmat resolver administratorga yozildi; hal qilinmagan xizmat done jamisiga kirmadi.
+- Restartdan keyingi izoh/holat va oyna maʼlumotlari, boshqa xodimga murojaat matni berilmasligi, public kiosk/TV APIlarida muammo izohi yo‘qligi tekşirildi. Referral sanasi va çipta yaratilgan sana kesimlari alohidaligi testlandi.
+- `node tests/referrals_browser.js`: haqiqiy Chromium’da operator tanlovi, refreshda izoh yo‘qolmasligi, yuboriş, admin qarori, xodimga natija körinişi, maxfiylik va uchta eksport ötdi. Notes ichidagi HTML matn sifatida körsatildi, bajarilmadi. Selectlarga aniq accessible label qöşildi.
+- `node tests/smoke_browser.js` — oldingi xizmat/prefiks/printer/audio/operator/TV oqimi ötdi; ovoz Node testlari 10/10 ötdi. Terminalda beshta xizmat saqlandi va admin referral opsiyasi/textarea yo‘qligi alohida tekşirildi.
+- Office paketlari XML va openpyxl/python-docx bilan o‘qildi: Excelning törtinçi varaqi, Wordning törtinçi jadvali. PDFda uchala natija, batafsil izohlar, qora kataklar va 1000 belgili izohlarning davomi PyMuPDF bilan tekşirildi; matn oxiri yo‘qolmadi, sahifa çetidan çiqmadi. Namunalar faqat sintetik data.
+- Frozen Windows EXEda HTTP orqali murojaat yaratildi, admin «unresolved» natija saqladi, hisobot statusi va barcha uch formatdagi yuklaşlar ötdi. Native WebView2/F10/login sinovi ham ötdi.
+
+LED DLL/config: statik .NET tahlili orqali faqat localhost:7777 UTF-16LE IPC formati tasdiqlandi. Fizik serial freym va COM parametrlari tasdiqlanmadi. DLL/EXE bajarilmadi, real portga buyruq yuborilmadi. Yangi `HardwareService.rar` 32 MiB executor transfer çegarasidan katta bölgani uçun yuklab olinmadi va içi tekşirilgan deb körsatilmadi. To‘liq dalillar [LED_TEXNIK_TAHLIL.md](LED_TEXNIK_TAHLIL.md)da. Jismoniy KPOS/LED va foydalanuvçi kompyuteridagi Windows boot sinovi bu natijalarga kirmaydi.

@@ -162,7 +162,7 @@ Ovoz uçun `/tv-audio` sahifasida yoqib sinang va TVga öting. Bevosita `/tv` o�
 
 Administrator → **Hisobotlar** → sana oraliğini tanlang → **Körsatiş** → **Excel**, **Word** yoki **PDF**. Fayllar internet va qöşimça Python paketlarisiz yaratiladi. Oddiy operator hisobot yuklay olmaydi.
 
-Bir xil universitet şabloni: rasmiy logo, tizim nomi, davr va tayyorlangan vaqt (UTC+5), oltita umumiy körsatkiç, bölimlar va operatorlar kesimi, hisoblaş izohi. Excelda uç varaq: Umumiy, Bölimlar, Operatorlar; raqamlar hisoblaş uçun son sifatida saqlanadi. Word tahrirlanadi, PDF çop etiş uçun A4 albom shaklida. PDF şrifti va uning litsenziyasi `fonts/` içida.
+Bir xil universitet şabloni: rasmiy logo, tizim nomi, davr va tayyorlangan vaqt (UTC+5), oltita umumiy körsatkiç, bölimlar va operatorlar kesimi, hisoblaş izohi. Excelda tört varaq: Umumiy, Bölimlar, Operatorlar, Muammoli murojaatlar; raqamlar hisoblaş uçun son sifatida saqlanadi. Word tahrirlanadi, PDF çop etiş uçun A4 albom shaklida. PDF şrifti va uning litsenziyasi `fonts/` içida.
 
 Namuna fayllar faqat sinov maʼlumotlaridan iborat; haqiqiy hisobotda bazadagi tanlangan davr maʼlumotlari olinadi. Windows, termoprinter, TV karnayi va tarmoq ruxsatlari öz qurilmangizda sinaladi.
 
@@ -195,3 +195,10 @@ Python/PowerShellsiz oson ishga tuşiriş uçun GitHub **Releases** ichidagi `TO
 Hisobotlarda kutiş va xizmat vaqti **minutda**. Har bir bölim va xodim uçun **Jami xizmat körsatilgan** — yakunlangan çiptalar soni; hali xizmat körsatmaganlar 0 bilan körsatiladi. XLSX, DOCX va PDF bir xil maʼlumot/ustunlar, oq fon va qora katakçali jadvallarni saqlaydi. Hisobot davri çipta yaratilgan kunga qarab olinadi.
 
 Administrator → **Elektron tablolar** apparatsiz sinov, oyna/ID/manzil sozlamalari va vazifa jurnalini beradi. Operator çaqiruvi, qayta çaqiruv va yakunlaş tegişli oynaning sinov tablosiga ötadi. Haqiqiy COM/IP/agent transporti **bloklangan**: ishlab çiqaruvçi protokoli hali tasdiqlanmagan. Tablodagi xato operator/TVni töxtatmaydi. [Birinçi bosqiç dalillari va keyingi integratsiya rejasi](LED_TEXNIK_TAHLIL.md).
+
+
+## Muammoli murojaatni administratorga yuboriş
+
+Xodimning joriy çipta oynasida **Boşqa xizmatga yönaltiriş → Administrator — muammoli murojaat** tanlanadi. Izoh majburiy; operator oynasi böşaydi, yangi çipta/bosma yaratilmaydi. Bu tanlov terminalning xizmatlari orasida körinmaydi.
+
+Administrator → **Muammoli murojaatlar**: Kutilmoqda / Hal qilindi / Hal qilinmadi. Yakunlaşda natija izohi majburiy; yuborgan operator, oyna, bölim, çipta va sanalar saqlanadi. Xodim faqat öz murojaatlari natijasini köradi. Hal qilingan xizmat uni yakunlagan administratorga yoziladi, hal qilinmagan xizmat yakunlangan deb sanalmaydi. Hisobotlar yuborilgan sana kesimidagi batafsil murojaatlar jadvali va uch holat jamisini ham beradi. [Batafsil yöriqnoma](EXE_BOSHLASH.md).

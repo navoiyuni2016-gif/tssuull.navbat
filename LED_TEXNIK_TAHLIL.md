@@ -97,3 +97,7 @@ Bu baytlar **COM2 yoki LEDga yuboriladigan freym emas**. Ularni bevosita qurilma
 `HardwareServiceHost.exe` va **7777-portni tinglaydigan DisplayProcessing dasturi** (agar alohida EXE bölsa, öşa fayl), yonidagi konfiguratsiya hamda xom `Logs.rar` kerak. DLL tashqi `TicketProcessing` assemblysiga ham havola qiladi; receiver o‘sha DLLga delegatsiya qilsa, u ham tekşiriladi. Xom loglarda `deskNumber/displayAddress/DisplayConnectionType/port_name` juftliklari qidiriladi, keyin receiverning serial ochish va freym yozish yo‘li kuzatiladi. Parol/token/litsenziya maʼlumotlari hisobotga köçirilmaydi.
 
 **Hozirgi ilova holati:** faqat apparatsiz sinov faol. Tasdiqlangan narsa eski jarayonlar örtasidagi ichki transport; mustaqil fizik LED encoder hali tasdiqlanmagan. Eski pullik jarayonga ulaniş yangi tizimning yechimi sifatida qöşilmadi. COM/IP/agent blokirovkasi saqlandi; taxminiy qurilma buyruği yuborilmadi. Operator/TV sinxron hodisalari mavjud outbox orqali tayyor, fizik transport dalil topilgandan keyin qöşiladi.
+
+### Katta arxiv bo‘yicha çegara
+
+Keyin yuborilgan `HardwareService.rar` executor transfer çegarasidan (**32 MiB**) katta bölgani sababli yuklab olinmadi. Bu arxivning içi tahlil qilinmadi. `HardwareServiceHost.exe`ni alohida yoki kerakli dastur/DLL/config/loglarni har biri 32 MiBdan kichik arxivlarda yuboriş kerak. Avval olingan 221 696 baytli DLL va 4 316 baytli config tahlili amalda qoladi. Hozirgi **windows-16** paketida ham fizik LED transportlari bloklangan.
