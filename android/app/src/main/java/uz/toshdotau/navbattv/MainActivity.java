@@ -46,7 +46,8 @@ public class MainActivity extends Activity {
     TextView connection;
     SharedPreferences prefs;
     String server="";
-    private String compactCss="";
+    private String compactCss="",compatJs="";
+    private volatile String scriptError="";
     boolean disconnected=false,mainError=false,active=false;
     private final Handler handler=new Handler(Looper.getMainLooper());
     private final Runnable retry=()->loadTV();
@@ -64,6 +65,11 @@ public class MainActivity extends Activity {
             while((length=input.read(buffer))!=-1)out.write(buffer,0,length);
             compactCss=new String(out.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
         }catch(java.io.IOException ignored){}
+        try(java.io.InputStream input=getAssets().open("webview-compat.js")){
+            java.io.ByteArrayOutputStream out=new java.io.ByteArrayOutputStream();byte[] buffer=new byte[4096];int length;
+            while((length=input.read(buffer))!=-1)out.write(buffer,0,length);
+            compatJs=new String(out.toByteArray(),java.nio.charset.StandardCharsets.UTF_8);
+        }catch(java.io.IOException ignored){}
         prefs=getSharedPreferences("tv",MODE_PRIVATE);
         // Apply this requested deployment once; later manual changes and PIN survive.
         if(!prefs.getBoolean(DEPLOYMENT_KEY,false))prefs.edit().putString("server",DEFAULT_SERVER).putBoolean("autostart",true).putBoolean(DEPLOYMENT_KEY,true).apply();
@@ -77,12 +83,20 @@ public class MainActivity extends Activity {
         settings.setUseWideViewPort(true);settings.setLoadWithOverviewMode(true);settings.setTextZoom(100);
         settings.setMediaPlaybackRequiresUserGesture(false);settings.setAllowFileAccess(false);settings.setAllowContentAccess(false);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);settings.setSupportMultipleWindows(false);settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
-        web.setWebChromeClient(new WebChromeClient());
+        // Drop only old cached assets once on this compatibility update; retain PIN/IP.
+        if(!prefs.getBoolean("compat_dom_v1",false)){web.clearCache(true);prefs.edit().putBoolean("compat_dom_v1",true).apply();}
+        web.setWebChromeClient(new WebChromeClient(){
+            @Override public boolean onConsoleMessage(android.webkit.ConsoleMessage message){
+                if(message.messageLevel()==android.webkit.ConsoleMessage.MessageLevel.ERROR){scriptError=message.message();if(scriptError.length()>300)scriptError=scriptError.substring(0,300);}
+                return super.onConsoleMessage(message);
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view,WebResourceRequest request){return !UrlPolicy.navigationAllowed(server,request.getUrl().toString());}
             @Override public boolean shouldOverrideUrlLoading(WebView view,String url){return !UrlPolicy.navigationAllowed(server,url);}
             @Override public WebResourceResponse shouldInterceptRequest(WebView view,WebResourceRequest request) {
                 if(UrlPolicy.sameOrigin(server,request.getUrl().toString())){
+                    if("/app.js".equals(request.getUrl().getPath()))return compatibleAppScript(request.getUrl().toString());
                     if("/__android_tv.css".equals(request.getUrl().getPath()))return new WebResourceResponse("text/css","UTF-8",new ByteArrayInputStream(compactCss.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
                     return null;
                 }
@@ -105,6 +119,26 @@ public class MainActivity extends Activity {
         networkCallback=new ConnectivityManager.NetworkCallback(){@Override public void onAvailable(Network network){handler.post(()->{if(active&&disconnected)loadTV();});}};
         try {connectivity.registerNetworkCallback(new NetworkRequest.Builder().build(),networkCallback);}catch(RuntimeException ignored){}
         if(server.isEmpty())showSettings();else loadTV();
+    }
+    WebResourceResponse compatibleAppScript(String url){
+        // Prepend compatibility before app execution. onPageFinished injection is too late.
+        if(!UrlPolicy.sameOrigin(server,url))return null;
+        java.net.HttpURLConnection connection=null;
+        try{
+            connection=(java.net.HttpURLConnection)new java.net.URL(url).openConnection();
+            connection.setConnectTimeout(5000);connection.setReadTimeout(5000);connection.setInstanceFollowRedirects(false);
+            connection.setRequestProperty("Accept-Encoding","identity");
+            if(connection.getResponseCode()!=200)return null;
+            java.io.ByteArrayOutputStream output=new java.io.ByteArrayOutputStream();
+            output.write(compatJs.getBytes(java.nio.charset.StandardCharsets.UTF_8));output.write(10);
+            try(java.io.InputStream input=connection.getInputStream()){
+                byte[] buffer=new byte[4096];int length,total=0;
+                while((length=input.read(buffer))!=-1){total+=length;if(total>1024*1024)return null;output.write(buffer,0,length);}
+            }
+            java.util.Map<String,String> headers=new java.util.HashMap<>();headers.put("Cache-Control","no-store");
+            return new WebResourceResponse("application/javascript","UTF-8",200,"OK",headers,new ByteArrayInputStream(output.toByteArray()));
+        }catch(java.io.IOException error){return null;}
+        finally{if(connection!=null)connection.disconnect();}
     }
     private void fullscreen(){getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY|View.SYSTEM_UI_FLAG_FULLSCREEN|View.SYSTEM_UI_FLAG_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);}
     @Override public void onWindowFocusChanged(boolean focus){super.onWindowFocusChanged(focus);if(focus)fullscreen();}
@@ -139,6 +173,7 @@ public class MainActivity extends Activity {
         EditText address=input(box,"172.20.20.26:8080",server,false);
         EditText pin=input(box,prefs.contains("pin_hash")?"Yangi PIN (özgartirmaslik uçun böş qoldiring)":"Sozlamalar PINi (4–8 raqam)","",true);
         EditText confirm=input(box,"PINni takrorlang","",true);
+        TextView diagnostic=new TextView(this);diagnostic.setText("WebView: "+web.getSettings().getUserAgentString()+(scriptError.isEmpty()?"":"\nJavaScript xatosi: "+scriptError));diagnostic.setTextIsSelectable(true);box.addView(diagnostic);
         CheckBox boot=new CheckBox(this);boot.setText("Box yoqilganda avtomatik oçiş");boot.setChecked(prefs.getBoolean("autostart",true));box.addView(boot);
         TextView instructions=new TextView(this);instructions.setText("Android 10+ da avtostart uçun ilovani Home/Launcher sifatida tanlang. Sozlamalar: pultda MENU yoki BACK → PIN.");box.addView(instructions);
         ScrollView scroll=new ScrollView(this);scroll.addView(box);

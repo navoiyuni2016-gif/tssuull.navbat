@@ -59,3 +59,11 @@ GitHub Android workflow Java/Gradle orqali APK yig‘adi; manzil tekşiruvlarini
 - Android 10+da ilova Home rolini söraydigan tizim oynasini oçadi; eski Android’da Home sozlamasi oçiladi. Boot va APK yangilanişi hodisalari qöllanadi. Ilova Home bölsa doimiy ekran/brauzersiz rejim ishlar.
 
 Tayyor yangilaniş: **1.0.8** (versionCode 8). Avvalgi APK bilan bir xil imzo: odatda eskisini o‘chirmasdan **Update / Yangilaş** orqali örnatiladi, PIN saqlanadi. Emulyator va layout sinovlari ötdi; qurilmaning Home/avtostart tanlovini X96da bir marta tasdiqlang va qayta yoqib sinang.
+
+## Fon bor, jadval yo‘q: eski X96 WebView mosligi
+
+Server PCda ishlasa, ammo TVda fon/logotipning eski belgisi va «Aloqa uzildi» qolsa, bu har doim LAN uzilgani degani emas. X96dagi eski Chromium WebView `replaceChildren`ni qo‘llamasligi mumkin. Tekshirishda bu imkoniyat olib tashlanganda aynan jadval bo‘shashi, clock/brand xatolari va offline yozuvi qayta hosil qilindi.
+
+Yangi APK serverdan kelgan `app.js` oldiga zarur moslik funksiyalarini o‘zi qo‘shadi (replaceChildren, fromEntries va Animation.finished). Backend kodini yoki CSPni o‘zgartirmaydi. Eski asset keshi bir marta tozalanadi; IP/PIN saqlanadi. Windows ilovasini qayta o‘rnatish talab qilinmaydi. MENU/BACK → sozlamalarda WebView user-agent va oxirgi JavaScript xatosi ko‘rinadi.
+
+Bu to‘liq Chromium yangilagichi emas. JavaScript sintaksisini umuman tushunmaydigan juda eski WebView bo‘lsa, Android System WebView’ni yangilash kerak bo‘ladi. Ilovaning moslik testi zamonaviy Android emulyatorida eski DOM imkoniyatlarini ataylab o‘chirib bajariladi; foydalanuvchining jismoniy X96ida qayta tekshiriladi.

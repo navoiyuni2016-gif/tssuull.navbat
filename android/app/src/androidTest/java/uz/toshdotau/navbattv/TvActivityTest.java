@@ -70,17 +70,38 @@ public class TvActivityTest {
         android.content.Intent boot=new android.content.Intent(android.content.Intent.ACTION_BOOT_COMPLETED).setPackage(context.getPackageName());
         assertFalse(context.getPackageManager().queryBroadcastReceivers(boot,0).isEmpty());
     }
+    @Test public void compatibilityLoadsBeforeAppScriptWithOlderDomApis() throws Exception {
+        Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+        String host=null;
+        for(Enumeration<NetworkInterface> interfaces=NetworkInterface.getNetworkInterfaces();interfaces.hasMoreElements();){
+            for(Enumeration<InetAddress> addresses=interfaces.nextElement().getInetAddresses();addresses.hasMoreElements();){InetAddress address=addresses.nextElement();if(address instanceof Inet4Address&&address.isSiteLocalAddress()){host=address.getHostAddress();break;}}
+            if(host!=null)break;
+        }
+        assertNotNull(host);
+        int port;try(ServerSocket reservation=new ServerSocket(0)){port=reservation.getLocalPort();}
+        String base="http://"+host+":"+port;
+        try(TinyServer server=new TinyServer(port,true);ActivityScenario<MainActivity> scenario=ActivityScenario.launch(MainActivity.class)){
+            scenario.onActivity(a->a.saveConfiguration(base,"7432","7432",true));
+            AtomicReference<String> title=new AtomicReference<>("");
+            for(int i=0;i<100;i++){scenario.onActivity(a->title.set(a.web.getTitle()));if("COMPAT_OK".equals(title.get()))break;Thread.sleep(100);}
+            assertEquals("Compatibility must be in place before app code executes","COMPAT_OK",title.get());
+        }
+    }
     private static final class TinyServer implements AutoCloseable {
         final ServerSocket socket;final Thread thread;volatile boolean closed=false;
-        TinyServer(int port) throws IOException {
+        TinyServer(int port) throws IOException {this(port,false);}
+        TinyServer(int port,boolean compatibility) throws IOException {
             socket=new ServerSocket();socket.setReuseAddress(true);socket.bind(new InetSocketAddress(port));
             thread=new Thread(()->{while(!closed){try(Socket client=socket.accept()){
                 BufferedReader reader=new BufferedReader(new InputStreamReader(client.getInputStream(),StandardCharsets.US_ASCII));String first=reader.readLine();if(first==null)continue;String line;while((line=reader.readLine())!=null&&!line.isEmpty()){}
                 boolean audio=first.contains("/tone.wav");byte[] body;
                 if(audio){ByteBuffer wav=ByteBuffer.allocate(1644).order(ByteOrder.LITTLE_ENDIAN);wav.put("RIFF".getBytes(StandardCharsets.US_ASCII));wav.putInt(1636);wav.put("WAVEfmt ".getBytes(StandardCharsets.US_ASCII));wav.putInt(16);wav.putShort((short)1);wav.putShort((short)1);wav.putInt(8000);wav.putInt(16000);wav.putShort((short)2);wav.putShort((short)16);wav.put("data".getBytes(StandardCharsets.US_ASCII));wav.putInt(1600);body=wav.array();}
+                else if(first.contains("/old-webview.js"))body="Element.prototype.replaceChildren=undefined;Object.fromEntries=undefined;".getBytes(StandardCharsets.UTF_8);
+                else if(first.contains("/app.js"))body="document.getElementById('target').replaceChildren('ready');document.title=Object.fromEntries([['ok',1]]).ok===1?'COMPAT_OK':'COMPAT_FAILED';".getBytes(StandardCharsets.UTF_8);
+                else if(compatibility)body="<!doctype html><meta name='viewport' content='width=device-width'><title>COMPAT_WAIT</title><div id='target'></div><script src='/old-webview.js'></script><script src='/app.js'></script>".getBytes(StandardCharsets.UTF_8);
                 else if(first.contains("/audio-test.js"))body="new Audio('/tone.wav').play().then(function(){document.title='AUDIO_OK'}).catch(function(e){document.title='AUDIO_FAILED:'+e.name})".getBytes(StandardCharsets.UTF_8);
                 else body=("<!doctype html><meta name='viewport' content='width=device-width'><title>TV_CONNECTING</title><script src='/audio-test.js'></script>").getBytes(StandardCharsets.UTF_8);
-                OutputStream out=client.getOutputStream();out.write(("HTTP/1.1 200 OK\r\nContent-Type: "+(audio?"audio/wav":first.contains("/audio-test.js")?"application/javascript":"text/html; charset=utf-8")+"\r\nContent-Security-Policy: default-src 'self'\r\nContent-Length: "+body.length+"\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));out.write(body);out.flush();
+                OutputStream out=client.getOutputStream();out.write(("HTTP/1.1 200 OK\r\nContent-Type: "+(audio?"audio/wav":(first.contains("/audio-test.js")||first.contains("/old-webview.js")||first.contains("/app.js"))?"application/javascript":"text/html; charset=utf-8")+"\r\nContent-Security-Policy: default-src 'self'\r\nContent-Length: "+body.length+"\r\nConnection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));out.write(body);out.flush();
             }catch(IOException error){if(!closed)throw new RuntimeException(error);}}},"test-tv-server");thread.start();
         }
         @Override public void close() throws Exception{closed=true;socket.close();thread.join(2000);}
