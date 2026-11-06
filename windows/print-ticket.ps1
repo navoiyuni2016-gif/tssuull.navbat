@@ -10,8 +10,10 @@ try {
   $doc.PrinterSettings.PrinterName=[string]$t.printer
   if(!$doc.PrinterSettings.IsValid){throw ('Printer ushbu Windows hisobiga korinmadi: '+$t.printer+' | '+[Security.Principal.WindowsIdentity]::GetCurrent().Name)}
   $device=Get-CimInstance Win32_Printer -ErrorAction SilentlyContinue | Where-Object {$_.Name -eq $t.printer} | Select-Object -First 1
-  if($device.WorkOffline){throw 'Printer Windowsda offline. USB, qogoz va printer navbatini tekshiring.'}
-  $doc.DocumentName='TOShDOTAU-'+[string]$t.label+'-'+[string]$t.job
+  if($device.WorkOffline -or $device.PrinterStatus -eq 7 -or $device.DetectedErrorState -in @(4,7,8,9,11)){throw 'Printer Windowsda offline. USB, qogoz va printer navbatini tekshiring.'}
+  $doc.DocumentName='TOShDOTAU-'+[string]$t.document_key
+  $existing=Get-CimInstance Win32_PrintJob -ErrorAction SilentlyContinue | Where-Object {$_.Document -eq $doc.DocumentName}
+  if($existing){throw 'Shu chek Windows navbatida allaqachon mavjud. Kuting yoki eski vazifani Windows navbatidan tekshirib olib tashlang.'}
   $doc.PrintController=New-Object Drawing.Printing.StandardPrintController
   $width=[int]([double]$t.width/25.4*100)
   $doc.DefaultPageSettings.PaperSize=New-Object Drawing.Printing.PaperSize('Navbat',$width,550)
@@ -39,6 +41,12 @@ try {
   }
   $doc.add_PrintPage($handler)
   $phase='submit';$doc.Print()
+  for($i=0;$i -lt 6;$i++){
+    $queued=Get-CimInstance Win32_PrintJob -ErrorAction SilentlyContinue | Where-Object {$_.Document -eq $doc.DocumentName} | Select-Object -First 1
+    if(!$queued){break}
+    if(([int]$queued.StatusMask -band 1634) -ne 0){throw ('Windows bosma navbatida xato: '+$queued.Status+'. Qogoz va USBni tekshiring; eski vazifa navbatda qolgan bolishi mumkin.')}
+    Start-Sleep -Milliseconds 200
+  }
   @{ok=$true;stage='accepted';message='Windows print queue accepted the job. Physical paper output is not verified.'}|ConvertTo-Json -Compress
 } catch {
   @{ok=$false;stage=$phase;error=$_.Exception.Message;type=$_.Exception.GetType().FullName;code=$_.Exception.HResult}|ConvertTo-Json -Compress

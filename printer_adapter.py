@@ -58,7 +58,7 @@ class Worker:
         try:
             if config['printer_mode']!='windows':raise ValueError('Windows printer rejimini tanlang.')
             diagnostic=table=='printer_tests'
-            payload=dict(university=alphabet.text(config['university']),service='Printer diagnostikasi — sinov çeki' if diagnostic else alphabet.text(service_name(row)) if row['lang']=='uz' else service_name(row),label='TEST' if diagnostic else row['label'],created=dt.datetime.fromisoformat(row['created']).astimezone(dt.timezone(dt.timedelta(hours=5))).strftime('%d.%m.%Y %H:%M:%S'),ahead=0 if diagnostic else row['ahead'],ahead_label='Sinov' if diagnostic else {'uz':'Oldinda kutayotganlar','ru':'Перед вами в очереди','en':'People ahead'}[row['lang']],printer=config['printer_name'],width=config['paper_width_mm'],job=str(row['job']))
+            payload=dict(document_key=('test-' if diagnostic else 'ticket-')+str(row['job'] if diagnostic else row['id']),university=alphabet.text(config['university']),service='Printer diagnostikasi — sinov çeki' if diagnostic else alphabet.text(service_name(row)) if row['lang']=='uz' else service_name(row),label='TEST' if diagnostic else row['label'],created=dt.datetime.fromisoformat(row['created']).astimezone(dt.timezone(dt.timedelta(hours=5))).strftime('%d.%m.%Y %H:%M:%S'),ahead=0 if diagnostic else row['ahead'],ahead_label='Sinov' if diagnostic else {'uz':'Oldinda kutayotganlar','ru':'Перед вами в очереди','en':'People ahead'}[row['lang']],printer=config['printer_name'],width=config['paper_width_mm'],job=str(row['job']))
             self.sender(payload)
         except PrintUncertain as exc:result='uncertain';error=str(exc)
         except (ValueError,OSError) as exc:result='failed';error=str(exc)
