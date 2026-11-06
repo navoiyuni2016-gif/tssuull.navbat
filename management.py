@@ -18,18 +18,26 @@ def migrate(c):
  CREATE TABLE IF NOT EXISTS windows(id INTEGER PRIMARY KEY,name TEXT NOT NULL,enabled INTEGER NOT NULL DEFAULT 1);
  CREATE TABLE IF NOT EXISTS permissions(user TEXT NOT NULL REFERENCES users(name),service INTEGER NOT NULL REFERENCES services(id),PRIMARY KEY(user,service));
  CREATE TABLE IF NOT EXISTS events(id INTEGER PRIMARY KEY,ticket INTEGER NOT NULL REFERENCES tickets(id),operation TEXT NOT NULL,user TEXT,service INTEGER NOT NULL,window INTEGER,created TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS desktop_preferences(key TEXT PRIMARY KEY,value TEXT NOT NULL);
+ CREATE TABLE IF NOT EXISTS printer_tests(id INTEGER PRIMARY KEY,request TEXT UNIQUE NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL,error TEXT);
  CREATE TABLE IF NOT EXISTS print_jobs(id INTEGER PRIMARY KEY,ticket INTEGER NOT NULL REFERENCES tickets(id),status TEXT NOT NULL,created TEXT NOT NULL,error TEXT);
  ''')
  for table, additions in {
   'services':{'name_en':"TEXT NOT NULL DEFAULT ''",'name_ru':"TEXT NOT NULL DEFAULT ''",'enabled':'INTEGER NOT NULL DEFAULT 1'},
   'calls':{'service':'INTEGER REFERENCES services(id)'},
   'users':{'enabled':'INTEGER NOT NULL DEFAULT 1'},
+  'print_jobs':{'retry_key':'TEXT'},
   'tickets':{'lang':"TEXT NOT NULL DEFAULT 'uz'",'label':"TEXT NOT NULL DEFAULT ''",'ahead':'INTEGER NOT NULL DEFAULT 0'},
  }.items():
   existing={r[1] for r in c.execute('PRAGMA table_info('+table+')')}
   for column,definition in additions.items():
    if column not in existing:c.execute(f'ALTER TABLE {table} ADD COLUMN {column} {definition}')
  for key,value in DEFAULTS.items():c.execute('INSERT OR IGNORE INTO settings VALUES (?,?)',(key,json.dumps(value,ensure_ascii=False)))
+ c.execute('CREATE UNIQUE INDEX IF NOT EXISTS print_retry_key ON print_jobs(retry_key) WHERE retry_key IS NOT NULL')
+ for table in ('print_jobs','printer_tests'):
+  c.execute("UPDATE "+table+" SET status='printing' WHERE status='dispatching'")
+  c.execute("UPDATE "+table+" SET status='printed' WHERE status='sent'")
+ repair_printer_settings(c)
  for n in range(1,6):c.execute('INSERT OR IGNORE INTO windows(id,name) VALUES (?,?)',(n,str(n)+'-oyna'))
  for n,ru in enumerate(RU,1):
   c.execute("UPDATE services SET name_ru=? WHERE id=? AND name_ru=''",(ru,n))
@@ -46,6 +54,17 @@ def migrate(c):
  university=c.execute("SELECT value FROM settings WHERE key='university'").fetchone()
  if university:c.execute("UPDATE settings SET value=? WHERE key='university'",(json.dumps(alphabet.text(json.loads(university[0])),ensure_ascii=False),))
  c.execute('PRAGMA user_version=3')
+
+def repair_printer_settings(c):
+ values={}
+ for key,fallback in [('printer_mode','windows'),('printer_name','KPOS_80 Printer(1)'),('paper_width_mm',80)]:
+  row=c.execute('SELECT value FROM settings WHERE key=?',(key,)).fetchone()
+  try:values[key]=json.loads(row[0]) if row else fallback
+  except (ValueError,TypeError):values[key]=fallback
+ if values['printer_mode'] not in ('html','windows'):values['printer_mode']='windows'
+ if not isinstance(values['printer_name'],str) or len(values['printer_name'])>200 or (values['printer_mode']=='windows' and not values['printer_name'].strip()):values['printer_name']='KPOS_80 Printer(1)'
+ if type(values['paper_width_mm']) is not int or not 58<=values['paper_width_mm']<=100:values['paper_width_mm']=80
+ for key,value in values.items():c.execute('INSERT OR REPLACE INTO settings VALUES (?,?)',(key,json.dumps(value,ensure_ascii=False)))
 
 def settings(c):return {r['key']:json.loads(r['value']) for r in c.execute('SELECT * FROM settings')}
 

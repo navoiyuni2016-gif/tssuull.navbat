@@ -1,6 +1,7 @@
 import database
 """Independent, offline university queue server. Python 3.12+, standard library."""
 import argparse
+import threading
 import subprocess
 import datetime as dt
 import hashlib
@@ -164,6 +165,10 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == '/api/printer':
+            user=self.user()
+            if not user or user['role']!='admin':return self.send(403,{'error':'Administrator sifatida kiring'})
+            return self.send(200,printer_adapter.diagnostics(connect,ROOT))
         if parsed.path == '/api/health':
             from desktop_runtime import instance_id
             return self.send(200,{'app':'toshdotau-navbat','instance':instance_id(DATA)})
@@ -279,12 +284,13 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_POST(self):
+        if getattr(self.server,'stop_event',None) and self.server.stop_event.is_set():return self.send(503,{'error':'Server yopilmoqda. Yangi navbat yaratilmadi.'})
         # Same-origin JSON requests only; cross-origin forms cannot mutate state.
         origin = self.headers.get('Origin')
         if (origin and origin != 'http://' + self.headers.get('Host','')) or self.headers.get('Content-Type') != 'application/json':
             return self.send(403,{'error':'Same-origin JSON required'})
         try:
-            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update'):
+            if self.path in ('/api/audio/upload','/api/audio/delete','/api/logo','/api/settings','/api/services','/api/windows','/api/users/update','/api/printer/test'):
                 u = self.user()
                 if not u or u['role'] != 'admin':
                     return self.send(403,{'error':'Administrator login required'})
@@ -304,17 +310,29 @@ class Handler(BaseHTTPRequestHandler):
                 if not mime:raise ValueError('PNG yoki JPEG rasm tanlang')
                 with connect() as c:c.execute('INSERT OR REPLACE INTO branding VALUES (1,?,?)',(payload,mime))
                 return self.send(200,{'ok':True})
+            if self.path == '/api/printer/test':
+                request=body.get('request','')
+                if not isinstance(request,str) or not 16<=len(request)<=100:raise ValueError('Diagnostika request identifikatori kerak')
+                with connect() as c:
+                    c.execute('INSERT OR IGNORE INTO printer_tests(request,status,created) VALUES (?,?,?)',(request,'pending',now()))
+                    job=c.execute('SELECT * FROM printer_tests WHERE request=?',(request,)).fetchone()
+                return self.send(200,{'job':dict(job)})
             if self.path in ('/api/print','/api/print/status'):
                 with connect() as c:
                     c.execute('BEGIN IMMEDIATE')
                     row=c.execute('SELECT * FROM tickets WHERE request=?',(body.get('request',''),)).fetchone()
                     if not row:raise ValueError('Chipta topilmadi')
                     job=c.execute('SELECT id,status,error FROM print_jobs WHERE ticket=? ORDER BY id DESC LIMIT 1',(row['id'],)).fetchone()
-                    if self.path=='/api/print' and (not job or job['status'] not in ('pending','dispatching')):
+                    attempt=body.get('attempt')
+                    if attempt is not None and (not isinstance(attempt,str) or not 16<=len(attempt)<=100):raise ValueError('Qayta bosma identifikatori noto‘g‘ri')
+                    existing=c.execute('SELECT id,status,error,ticket FROM print_jobs WHERE retry_key=?',(attempt,)).fetchone() if attempt else None
+                    if existing and existing['ticket']!=row['id']:raise ValueError('Bosma identifikatori boshqa chiptaga tegishli')
+                    if existing:job=existing
+                    elif self.path=='/api/print' and (not job or (job['status'] not in ('pending','printing') and body.get('previous_job')==job['id'])):
                         config=management.settings(c)
-                        c.execute('INSERT INTO print_jobs(ticket,status,created) VALUES (?,?,?)',(row['id'],'pending' if config['printer_mode']=='windows' else 'preview',now()))
+                        c.execute('INSERT INTO print_jobs(ticket,status,created,retry_key) VALUES (?,?,?,?)',(row['id'],'pending' if config['printer_mode']=='windows' else 'preview',now(),attempt))
                         job=c.execute('SELECT id,status,error FROM print_jobs WHERE ticket=? ORDER BY id DESC LIMIT 1',(row['id'],)).fetchone()
-                return self.send(200,{'job':dict(job) if job else None})
+                return self.send(200,{'job':{k:job[k] for k in ('id','status','error')} if job else None})
             if self.path == '/api/audio/upload':
                 with connect() as c:
                     result = audio_store.save(c,DATA/'audio',body)
@@ -458,7 +476,9 @@ def run_server(host,port,stop=None):
         log=RotatingFileHandler(DATA/'server.log',maxBytes=1024*1024,backupCount=3,encoding='utf-8')
         logger=logging.getLogger('navbat');logger.addHandler(log);logger.setLevel(logging.INFO)
         worker=printer_adapter.Worker(connect,DATA,ROOT);worker.start()
-        runtime.start_backups(connect,DATA)
+        shutdown=stop or threading.Event()
+        server.stop_event=shutdown
+        backup_thread=runtime.start_backups(connect,DATA,shutdown)
         if stop is None:print(f'Navbat serveri: {host}:{port}',flush=True)
         else:logger.info('Navbat xizmati ishga tushdi')
         try:
@@ -466,7 +486,7 @@ def run_server(host,port,stop=None):
             else:
                 while not stop.is_set():server.handle_request()
         finally:
-            worker.stop.set();server.server_close();logger.removeHandler(log);log.close()
+            shutdown.set();server.server_close();worker.close();backup_thread.join(timeout=3);logger.removeHandler(log);log.close()
 
 if __name__ == '__main__':
     try:

@@ -26,43 +26,79 @@ def preview(ticket, service, university):
 
 
 class Worker:
-    def __init__(self, connect, data, root):
-        self.connect=connect;self.data=Path(data);self.root=Path(root);self.stop=threading.Event()
+    def __init__(self, connect, data, root, sender=None):
+        self.connect=connect;self.data=Path(data);self.root=Path(root);self.stop=threading.Event();self.thread=None
+        self.sender=sender or self.send_windows
     def start(self):
         with self.connect() as c:
-            c.execute("UPDATE print_jobs SET status='uncertain',error='Server bosma paytida to‘xtagan. Qog‘ozni tekshirib qayta chop eting.' WHERE status='dispatching'")
-        threading.Thread(target=self.run,daemon=True).start()
+            for table in ('print_jobs','printer_tests'):
+                c.execute("UPDATE "+table+" SET status='uncertain',error='Server bosma paytida to‘xtagan. Qog‘ozni tekshiring; avtomatik takrorlanmadi.' WHERE status IN ('printing','dispatching')")
+        self.thread=threading.Thread(target=self.run,daemon=True);self.thread.start()
+    def close(self):
+        self.stop.set()
+        if self.thread:self.thread.join()
     def run(self):
         while not self.stop.is_set():
             try:self.once()
             except Exception:
-                # Do not lose the worker; status is persisted before external I/O.
                 import logging
                 logging.getLogger('navbat').exception('Bosma xizmati xatosi')
-            self.stop.wait(1)
+            self.stop.wait(.5)
     def once(self):
         with self.connect() as c:
             c.execute('BEGIN IMMEDIATE')
             row=c.execute("SELECT print_jobs.id AS job,tickets.*,services.name AS service_name,services.name_ru AS service_name_ru,services.name_en AS service_name_en FROM print_jobs JOIN tickets ON tickets.id=print_jobs.ticket JOIN services ON services.id=tickets.service WHERE print_jobs.status='pending' ORDER BY print_jobs.id LIMIT 1").fetchone()
+            table='print_jobs'
+            if not row:
+                row=c.execute("SELECT id AS job,created FROM printer_tests WHERE status='pending' ORDER BY id LIMIT 1").fetchone();table='printer_tests'
             if not row:return
             config=management.settings(c)
-            c.execute("UPDATE print_jobs SET status='dispatching' WHERE id=?",(row['job'],))
-        result='sent';error=None
+            c.execute("UPDATE "+table+" SET status='printing' WHERE id=?",(row['job'],))
+        result='printed';error=None
         try:
-            if config['printer_mode']!='windows':raise ValueError('Printer rejimi o‘zgargan. Sinov ko‘rinishidan foydalaning.')
-            if os.name!='nt':raise ValueError('Windows printer rejimi faqat Windows’da ishlaydi')
-            payload=dict(university=alphabet.text(config['university']),service=alphabet.text(service_name(row)) if row['lang']=='uz' else service_name(row),label=row['label'],created=row['created'],ahead=row['ahead'],ahead_label={'uz':'Oldinda kutayotganlar','ru':'Перед вами в очереди','en':'People ahead'}[row['lang']],printer=config['printer_name'],width=config['paper_width_mm'])
-            self.data.mkdir(parents=True,exist_ok=True)
-            with tempfile.NamedTemporaryFile(mode='w',suffix='.json',dir=self.data,encoding='utf-8',delete=False) as stream:
-                json.dump(payload,stream,ensure_ascii=False);path=Path(stream.name)
-            try:
-                completed=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-File',str(self.root/'windows'/'print-ticket.ps1'),'-TicketFile',str(path)],capture_output=True,timeout=45)
-                if completed.returncode:raise ValueError('Windows bosma xatosi. Printer drayveri, nomi va qog‘ozini tekshiring.')
-            finally:path.unlink(missing_ok=True)
-        except subprocess.TimeoutExpired:
-            result='uncertain';error='Bosma vaqti tugadi. Qog‘oz chiqqanini tekshiring; keyin shu chiptani qayta chop eting.'
+            if config['printer_mode']!='windows':raise ValueError('Windows printer rejimini tanlang.')
+            diagnostic=table=='printer_tests'
+            payload=dict(university=alphabet.text(config['university']),service='Printer diagnostikasi — sinov çeki' if diagnostic else alphabet.text(service_name(row)) if row['lang']=='uz' else service_name(row),label='TEST' if diagnostic else row['label'],created=dt.datetime.fromisoformat(row['created']).astimezone(dt.timezone(dt.timedelta(hours=5))).strftime('%d.%m.%Y %H:%M:%S'),ahead=0 if diagnostic else row['ahead'],ahead_label='Sinov' if diagnostic else {'uz':'Oldinda kutayotganlar','ru':'Перед вами в очереди','en':'People ahead'}[row['lang']],printer=config['printer_name'],width=config['paper_width_mm'],job=str(row['job']))
+            self.sender(payload)
+        except PrintUncertain as exc:result='uncertain';error=str(exc)
         except (ValueError,OSError) as exc:result='failed';error=str(exc)
-        with self.connect() as c:c.execute('UPDATE print_jobs SET status=?,error=? WHERE id=?',(result,error,row['job']))
+        with self.connect() as c:c.execute('UPDATE '+table+' SET status=?,error=? WHERE id=?',(result,error,row['job']))
+    def send_windows(self,payload):
+        if os.name!='nt':raise ValueError('Windows printer rejimi faqat Windows’da ishlaydi')
+        self.data.mkdir(parents=True,exist_ok=True)
+        with tempfile.NamedTemporaryFile(mode='w',suffix='.json',dir=self.data,encoding='utf-8',delete=False) as stream:
+            json.dump(payload,stream,ensure_ascii=False);path=Path(stream.name)
+        try:
+            try:
+                completed=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-File',str(self.root/'windows'/'print-ticket.ps1'),'-TicketFile',str(path)],capture_output=True,timeout=45,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+            except subprocess.TimeoutExpired:raise PrintUncertain('Bosma vaqti tugadi. Qog‘ozni tekshiring; avtomatik qayta chop etilmadi.')
+            output=completed.stdout.decode('utf-8-sig',errors='replace').strip()
+            try:answer=json.loads(output)
+            except ValueError:answer={}
+            if completed.returncode:
+                detail=answer.get('error') or completed.stderr.decode('utf-8-sig',errors='replace').strip() or output or 'Windows bosma xatosi'
+                message=str(detail)[:2000]
+                if answer.get('stage')=='submit' or not answer:raise PrintUncertain(message)
+                raise ValueError(message)
+            if answer.get('ok') is not True:raise PrintUncertain('Windows javobi tasdiqlanmadi. Qog‘ozni va diagnostikani tekshiring.')
+        finally:path.unlink(missing_ok=True)
+
+
+class PrintUncertain(ValueError):pass
+
+
+def diagnostics(connect,root):
+    with connect() as c:
+        config=management.settings(c)
+        jobs=[dict(row) for row in c.execute('SELECT print_jobs.*,tickets.label,tickets.request AS ticket_request FROM print_jobs JOIN tickets ON tickets.id=print_jobs.ticket ORDER BY print_jobs.id DESC LIMIT 20')]
+        tests=[dict(row) for row in c.execute('SELECT * FROM printer_tests ORDER BY id DESC LIMIT 5')]
+    result=dict(settings={k:config[k] for k in ('printer_mode','printer_name','paper_width_mm')},jobs=jobs,tests=tests,platform=os.name,printers=[],physical_test_verified=False)
+    if os.name!='nt':result['error']='Printer diagnostikasi Windows’da bajariladi.';return result
+    try:
+        completed=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-File',str(Path(root)/'windows'/'printer-info.ps1')],capture_output=True,timeout=20,check=True,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        result.update(json.loads(completed.stdout.decode('utf-8-sig')))
+    except (OSError,ValueError,subprocess.SubprocessError) as exc:result['error']='Windows printerlarini o‘qib bo‘lmadi: '+str(exc)
+    return result
 
 
 KIOSK_PRINTER = 'KPOS_80 Printer(1)'
@@ -82,7 +118,7 @@ def configure_printer(connect, name=KIOSK_PRINTER, *, automatic=False):
     """Select only an installed driver; never send a test or replay old jobs."""
     if automatic:
         with connect() as c:
-            if management.settings(c)['printer_mode'] != 'html':
+            if c.execute("SELECT 1 FROM desktop_preferences WHERE key='printer_preset_v1'").fetchone() or management.settings(c)['printer_mode'] != 'html':
                 return False
     if name not in installed_printers():
         if automatic:
@@ -97,11 +133,9 @@ def configure_printer(connect, name=KIOSK_PRINTER, *, automatic=False):
 
 
 def apply_kiosk_preset(connect):
-    """The dedicated Windows EXE always starts with the user's KPOS/80 mm preset.
-
-    Store the selection even if the printer is temporarily offline. The durable
-    worker reports driver/printing failures; it never opens a browser PDF dialog
-    and never replays old preview jobs when these settings change.
-    """
+    """Apply the user's initial preset once; subsequent manual settings persist."""
     with connect() as c:
+        c.execute('BEGIN IMMEDIATE')
+        if c.execute("SELECT 1 FROM desktop_preferences WHERE key='printer_preset_v1'").fetchone():return
         management.save_settings(c,dict(printer_mode='windows',printer_name=KIOSK_PRINTER,paper_width_mm=80))
+        c.execute("INSERT INTO desktop_preferences VALUES ('printer_preset_v1','1')")

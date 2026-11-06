@@ -8,10 +8,10 @@ Windows 10/11 **64-bit**. Python alohida örnatilmaydi; ilova bilan birga keladi
 2. Örnatuvçini oçing, Next → Install → Finish. Ixtiyoriy **Windowsga kirganda terminalni avtomatik oçiş** bandini belgilang.
 3. Desktopdagi **TOShDOTAU** yorliğini bosing.
 4. Birinçi marta kamida 12 belgili admin parolini ikki marta kiriting. Login: **admin**. Keyingi oçilişlarda parol yaratilişi söralmaydi.
-5. Terminal Edge’da töliq ekranda oçiladi. Oddiy oynaga ötiş uçun Alt+F4; boşqaruv oynasida administrator, xodim, TV va printer tugmalari bor. Bu oddiy EXE rejimi OSni qulflamaydi; talabani faqat terminalda saqlaş uçun Windows Assigned Access alohida sozlanadi.
-6. Printer qölda tanlanmaydi: EXE har oçilişda `printer_mode=windows`, `printer_name=KPOS_80 Printer(1)`, `paper_width_mm=80`ni avtomatik saqlaydi. Eski bazadan köçirilgan printer sozlamasi ham shu qiymatlarga ötiladi. Windows’da aynan shu drayver örnatilgan bölsin. Ulangan qurilmada bitta çekni sinang. Printer vaqtinça öçiq bölsa sozlama qoladi, bosma xatosi körsatiladi; PDF oynasi oçilmaydi. Eski sinov çiptalari avtomatik qayta çop etilmaydi.
+5. Terminal brauzersiz, WebView2 ilova oynasida töliq ekranda oçiladi. F10 — alohida administrator oynasi; F11 — ekran rejimi. Alt+F4 bilan yopiş administrator parolini talab qiladi. Bu oddiy EXE rejimi OSni qulflamaydi; talabani faqat terminalda saqlaş uçun Windows Assigned Access alohida sozlanadi.
+6. Printer qölda tanlanmaydi: EXE birinçi oçilişda `printer_mode=windows`, `printer_name=KPOS_80 Printer(1)`, `paper_width_mm=80`ni avtomatik saqlaydi. Eski bazadan köçirilgan printer sozlamasi ham shu qiymatlarga ötiladi. Windows’da aynan shu drayver örnatilgan bölsin. Ulangan qurilmada bitta çekni sinang. Printer vaqtinça öçiq bölsa sozlama qoladi, bosma xatosi körsatiladi; PDF oynasi oçilmaydi. Eski sinov çiptalari avtomatik qayta çop etilmaydi.
 
-Server fonda işlaydi; boşqaruv oynasini yopiş bazani öçirmaydi. Windows qayta yoqilganda ixtiyoriy Startup yorliği joriy foydalanuvçi kirgaç ilovani qayta oçadi. Bu Windows hisobiga avtomatik kiriş yoki tizim xizmati örnini bosmaydi. Töliq qulflangan boot rejimi alohida qurilma sozlamasi.
+Server ilova oçiq paytda ishlar; ilova yopilsa server ham to‘ğri töxtaydi. Baza öçirilmaydi. Windows qayta yoqilganda ixtiyoriy Startup yorliği joriy foydalanuvçi kirgaç ilovani qayta oçadi. Bu Windows hisobiga avtomatik kiriş yoki tizim xizmati örnini bosmaydi. Töliq qulflangan boot rejimi alohida qurilma sozlamasi.
 
 Ilova hozir raqamli imzolanmagan. Windows SmartScreen tanimagan publisher deb körsatişi mumkin; tashkilot siyosati man qilsa administrator orqali örnating. Örnatuvçi va tekşiriş uçun SHA256 fayli bir GitHub release ichida joylanadi.
 
@@ -34,3 +34,5 @@ Xodim va X96 ilovaga LAN orqali ulanadi. Server IP manzilini routerda doimiy qil
 ## Yangi EXEni yig‘iş
 
 GitHub Actions → **Windows EXE** Windows runnerida manba testlarini bajaradi, PyInstaller orqali haqiqiy Windows EXE yaratadi, aynan yig‘ilgan EXE ichida Tk, SQLite, universitet rasmlari, shriftlar, uch hisobot formati va lokal HTTP serverni sinaydi. Ötgan paket NSIS örnatuvçisi va ZIP bilan Releases’ga joylanadi. Jismoniy printer va qurilmadagi Windows/X96 boot sinovi bunga kirmaydi.
+
+Yangi native oyna, WebView2 örnatişi, yangilaş va diagnostika: **[WEBVIEW2_RUNTIME.md](WEBVIEW2_RUNTIME.md)**.

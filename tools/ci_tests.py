@@ -4,7 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('tests'))
+result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.discover('tests',pattern=sys.argv[1] if len(sys.argv)>1 else 'test*.py'))
 if os.environ.get('GITHUB_ACTIONS'):
     for test,error in result.failures+result.errors:
         text=error.replace('%','%25').replace('\r','%0D').replace('\n','%0A')

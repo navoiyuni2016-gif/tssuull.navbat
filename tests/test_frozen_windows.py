@@ -46,3 +46,12 @@ class FrozenWindows(unittest.TestCase):
             finally:
                 if server.poll() is None:server.terminate()
                 server.wait(timeout=15);log.close()
+
+    def test_actual_native_webview_window(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path=Path(folder)/'native.json'
+            try:completed=subprocess.run([os.environ['NAVBAT_EXE'],'--native-self-test',str(path)],timeout=120)
+            except subprocess.TimeoutExpired:self.fail('Native window timed out')
+            body=json.loads(path.read_text()) if path.exists() else {'error':'native result missing'}
+            self.assertEqual(completed.returncode,0,body);self.assertTrue(body.get('ok'),body)
+            self.assertEqual(body['renderer'],'edgechromium');self.assertTrue(body['native_window']);self.assertTrue(body['admin_login'])

@@ -13,18 +13,19 @@ def backup(connect,data):
     return path
 
 
-def start_backups(connect,data):
+def start_backups(connect,data,stop=None):
+    stop=stop or threading.Event()
     def run():
         day=None
-        while True:
+        while not stop.is_set():
             try:
                 today=dt.datetime.now(dt.timezone(dt.timedelta(hours=5))).date()
                 if today!=day:
                     backup(connect,data);day=today
                     for old in sorted((data/'backups').glob('*.db'),reverse=True)[14:]:old.unlink()
             except Exception:logging.getLogger('navbat').exception('Zaxira xatosi')
-            threading.Event().wait(60)
-    threading.Thread(target=run,daemon=True).start()
+            stop.wait(60)
+    thread=threading.Thread(target=run,daemon=True);thread.start();return thread
 
 
 class InstanceLock:

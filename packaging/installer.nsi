@@ -23,6 +23,19 @@ Section "TOShDOTAU (majburiy)" Main
   CreateDirectory "$SMPROGRAMS\TOShDOTAU"
   CreateShortcut "$SMPROGRAMS\TOShDOTAU\TOShDOTAU.lnk" "$INSTDIR\TOShDOTAU.exe"
   CreateShortcut "$DESKTOP\TOShDOTAU.lnk" "$INSTDIR\TOShDOTAU.exe"
+  CreateShortcut "$SMPROGRAMS\TOShDOTAU\Sozlamalar.lnk" "$INSTDIR\TOShDOTAU.exe" "--manage"
+  ReadRegStr $0 HKCU "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+  StrCmp $0 "" check_machine runtime_done
+  check_machine:
+  SetRegView 32
+  ReadRegStr $0 HKLM "Software\Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}" "pv"
+  StrCmp $0 "" install_runtime runtime_done
+  install_runtime:
+  DetailPrint "Installing Microsoft WebView2 Runtime (internet may be required)..."
+  ExecWait '"$INSTDIR\WebView2Setup.exe" /silent /install' $1
+  IntCmp $1 0 runtime_done
+  MessageBox MB_OK "WebView2 Runtime ornatilmadi. Internet bilan WebView2Setup.exe ni oching. WEBVIEW2_RUNTIME.md yoriqnomasiga qarang."
+  runtime_done:
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\TOShDOTAU" "DisplayName" "TOShDOTAU elektron navbat"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\TOShDOTAU" "UninstallString" '"$INSTDIR\Uninstall.exe"'
@@ -42,6 +55,7 @@ Section "Uninstall"
   Delete "$INSTDIR\TOShDOTAU.exe"
   RMDir /r "$INSTDIR\_internal"
   RMDir /r "$INSTDIR\licenses"
+  Delete "$INSTDIR\WebView2Setup.exe"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
 SectionEnd

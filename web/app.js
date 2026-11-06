@@ -124,8 +124,9 @@ async function completeKioskPrint(){
   setKioskBusy(true);
   for(let attempt=0;attempt<90;attempt++){
     const job=(await api('print/status',{request:ticket.request})).job;
-    if(job?.status==='sent'){remember(null);ticket=null;requestId=null;document.querySelector('#kiosk-print-error')?.remove();return;}
-    if(!job||!['pending','dispatching'].includes(job.status))throw Error(job?.error||copy(job?.status||'missing'));
+    if(job)ticket.last_print_job=job.id;
+    if(job?.status==='printed'||job?.status==='sent'){remember(null);ticket=null;requestId=null;document.querySelector('#kiosk-print-error')?.remove();return;}
+    if(!job||!['pending','printing','dispatching'].includes(job.status))throw Error(job?.error||copy(job?.status||'missing'));
     await new Promise(resolve=>setTimeout(resolve,500));
   }
   throw Error(copy('uncertain'));
@@ -135,7 +136,7 @@ function kioskPrintError(error){
   const box=el('div');box.id='kiosk-print-error';box.className='kiosk-print-error';box.setAttribute('role','alert');el('p',error.message,box);
   if(ticket)button({uz:'Qog‘ozni tekshirib, shu chiptani qayta chop etish',ru:'Проверить бумагу и повторить печать билета',en:'Check paper and reprint the same ticket'}[lang],async()=>{
     if(busy)return;busy=true;setKioskBusy(true);
-    try{await api('print',{request:ticket.request});await completeKioskPrint();}catch(e){kioskPrintError(e)}finally{busy=false;setKioskBusy(false)}
+    try{ticket.reprintAttempt=ticket.reprintAttempt||newRequest();await api('print',{request:ticket.request,previous_job:ticket.last_print_job,attempt:ticket.reprintAttempt});ticket.reprintAttempt=null;await completeKioskPrint();}catch(e){kioskPrintError(e)}finally{busy=false;setKioskBusy(false)}
   },box);
 }
 
@@ -196,6 +197,24 @@ async function adminSection(key,data,panel){
     ['Dushanba','Seshanba','Chorshanba','Payshanba','Juma','Shanba','Yakshanba'].forEach((name,i)=>{const box=field(days,name,'checkbox');box.checked=c.weekdays.includes(i);selected.push(box)});
     submitForm(f,async()=>{const body={};for(const [k,input] of Object.entries(fields))body[k]=input.type==='number'?Number(input.value):input.value;
       body.daily_reset=numbering.value==='daily';body.printer_mode=printer.value;body.weekdays=selected.flatMap((v,i)=>v.checked?[i]:[]);await api('settings',body);await refresh();});
+    const diagnostics=el('section',undefined,panel);diagnostics.className='card branding-card';el('h2','Printer diagnostikasi',diagnostics);
+    const printerList=choice(diagnostics,'Aniqlangan Windows printerlari',[[c.printer_name,c.printer_name||'Tanlang']],c.printer_name);
+    printerList.onchange=()=>{fields.printer_name.value=printerList.value;printer.value='windows'};
+    printerList.classList.add('technical');
+    const info=el('p','Diagnostika yuklanmoqda…',diagnostics);info.className='technical';info.setAttribute('role','status');
+    const jobs=el('div',undefined,diagnostics);let diagnosticRequest=null;
+    async function inspectPrinter(){
+      const d=await api('printer');printerList.replaceChildren();
+      for(const item of d.printers||[]){const option=el('option',item.name+' · '+(item.driver||'')+' · '+(item.port||''),printerList);option.value=item.name;option.selected=item.name===fields.printer_name.value;}
+      if(![...printerList.options].some(o=>o.value===fields.printer_name.value)){const o=el('option',fields.printer_name.value||'Printer topilmadi',printerList);o.value=fields.printer_name.value;o.selected=true;}
+      info.textContent=d.error||('Windows hisobi: '+d.account+' · Spooler: '+d.spooler+'. Printed — Windows navbatiga qabul qilindi; haqiqiy qog‘oz chiqishi alohida tekshiriladi.');
+      jobs.replaceChildren();
+      for(const job of d.tests||[]){el('p','Sinov #'+job.id+': '+job.status+(job.error?' — '+job.error:''),jobs);if(!['pending','printing'].includes(job.status))diagnosticRequest=null;}
+      for(const job of d.jobs||[]){const row=el('p',job.label+' · '+job.status+(job.error?' — '+job.error:''),jobs);if(!['pending','printing'].includes(job.status))button('Shu chiptani qayta chop etish',async()=>{if(!confirm('Qog‘ozni tekshiring. Shu chiptani qayta chop etasizmi?'))return;await api('print',{request:job.ticket_request,previous_job:job.id,attempt:newRequest()});await inspectPrinter()},row);}
+    }
+    button('Printerlarni yangilash',inspectPrinter,diagnostics);
+    button('Sinov cheki — navbat raqamisiz',async()=>{diagnosticRequest=diagnosticRequest||newRequest();await api('printer/test',{request:diagnosticRequest});await inspectPrinter()},diagnostics);
+    inspectPrinter().catch(error=>{info.textContent=error.message});
     const brand=el('section',undefined,panel);brand.className='card branding-card';el('h2','Universitet logotipi',brand);
     const row=el('div',undefined,brand);row.className='branding-row';const preview=el('div',undefined,row);preview.className='logo-preview';const mark=el('img',undefined,preview);mark.src='/logo';mark.alt='Universitet logotipi';el('span',state.university,preview);
     const logoForm=el('form',undefined,row);logoForm.className='logo-form';const file=field(logoForm,'PNG yoki JPEG, 2 MB gacha','file');file.accept='.png,.jpg,.jpeg';file.required=true;
