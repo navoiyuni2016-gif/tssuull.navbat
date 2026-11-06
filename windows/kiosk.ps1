@@ -3,6 +3,14 @@
   [ValidateSet('Terminal','TV')][string]$Mode='Terminal'
 )
 $ErrorActionPreference='Stop'
+if ($Mode -eq 'Terminal') {
+  $candidates=@((Join-Path $PSScriptRoot '../TOShDOTAU.exe'),(Join-Path $PSScriptRoot '../../TOShDOTAU.exe'))
+  if($env:LOCALAPPDATA){$candidates+=(Join-Path $env:LOCALAPPDATA 'Programs/TOShDOTAU/TOShDOTAU.exe')}
+  $native=$candidates|Where-Object {Test-Path -LiteralPath $_}|Select-Object -First 1
+  if(-not $native){throw 'TOShDOTAU.exe topilmadi. Windows ilovasini ornating; terminal uchun tashqi brauzer ochilmaydi.'}
+  Start-Process -FilePath (Resolve-Path -LiteralPath $native).ProviderPath -ArgumentList '--kiosk'
+  return
+}
 $address=$null
 if (![Uri]::TryCreate($Server,[UriKind]::Absolute,[ref]$address) -or $address.Scheme -notin @('http','https') -or $address.UserInfo -or $address.Query -or $address.Fragment) { throw 'Server manzili http://IP:8080 shaklida bolsin' }
 $base=$address.GetLeftPart([UriPartial]::Authority)
